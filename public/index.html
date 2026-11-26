@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Versofy Savings Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a Versofy sales tool used live with a customer, exact and calm
+   IDEA a municipal electricity bill reprinted: old bill vs new bill
+   PICTURE the recommended package as a big Versofy-green plate, then two bill columns, the gap is the saving
+   COLOUR Versofy brand (versofy.energy): deep green #193F2E, mint #C0EBBD, navy #121442, yellow #FDBD14, amber #FAA21B, cream #F1E9DF, coral #F26E67
+   TYPE Fraunces (headings, figures) + Open Sans (text), as on versofy.energy
+   LAYOUT laptop: inputs left, recommendation + bills right; table below. phone: title, recommendation, inputs, table */
+:root{color-scheme:light dark;--bg:light-dark(#f1e9df,#0f2e20);--ink:light-dark(#121442,#f1e9df);--mut:light-dark(#4d5a52,#bddfb8);--line:light-dark(#dccfbf,#2b5c47);--panel:light-dark(#ffffff,#193f2e);--green:#193f2e;--mint:#c0ebbd;--navy:#121442;--yel:#fdbd14;--amb:#faa21b;--sun:var(--green);--sundk:light-dark(#9a5a00,#faa21b);--sunsoft:light-dark(#c0ebbd,#2b5c47);--grid:light-dark(#b8ab99,#6f7d74);--good:light-dark(#01714d,#7fe0a8);--bad:light-dark(#c2413a,#f26e67)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Open Sans",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(24px,4vw,52px) max(5vw,16px)}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font:800 clamp(32px,4.6vw,46px)/1.05 Fraunces,Georgia,serif;letter-spacing:-.02em;margin:0 0 6px;text-wrap:balance}
+h2{font:800 28px/1.1 Fraunces,Georgia,serif;margin:0 0 10px}
+.lede{color:var(--mut);margin:0 0 22px;max-width:70ch}
+.top{display:grid;grid-template-columns:minmax(0,390px) minmax(0,1fr);gap:clamp(20px,3vw,40px);align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px}
+.field{margin-bottom:18px}
+.lab{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:15px;margin-bottom:6px}
+.lab output{font-weight:500;color:var(--mut);white-space:nowrap}
+.hint{font-size:13px;color:var(--mut);margin-top:5px}
+select,input[type=number],input[type=text]{width:100%;font:16px "Open Sans",sans-serif;padding:10px 12px;min-height:46px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+.money{position:relative}.money span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut)}.money input{padding-left:28px}
+input[type=range]{width:100%;accent-color:light-dark(#193f2e,#fdbd14);height:32px}
+.sugg{display:grid;gap:2px;margin-top:4px;border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.sugg[hidden]{display:none}
+.sugg button{all:unset;cursor:pointer;padding:10px 12px;min-height:24px;display:flex;justify-content:space-between;gap:10px;font-size:15px}
+.sugg button span{color:var(--mut);font-size:13px;white-space:nowrap}
+.sugg button:hover,.sugg button.on{background:var(--sunsoft)}
+.seg2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.seg2 button{font:600 15px "Open Sans",sans-serif;min-height:46px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);cursor:pointer;line-height:1.2}
+.seg2 button{border-radius:9999px}.seg2 button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}:root[data-theme=dark] .seg2 button[aria-pressed=true]{background:var(--yel);color:var(--navy);border-color:var(--yel)}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .seg2 button[aria-pressed=true]{background:var(--yel);color:var(--navy);border-color:var(--yel)}}
+.tinfo{margin-top:8px;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tinfo b{display:block;font-size:15px}
+.warn{color:var(--sundk);font-weight:600}
+details{margin-top:4px}summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+.res{display:grid;gap:18px}
+.rec{background:var(--green);color:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(18px,2.6vw,28px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 20px;align-items:end}
+.rec .k{font-weight:700;font-size:17px;grid-column:1/-1;color:var(--mint)}
+.rec .nm{font:800 clamp(56px,9vw,96px)/.95 Fraunces,Georgia,serif;letter-spacing:-.02em;overflow-wrap:anywhere;color:var(--yel)}
+.rec .fee{font:800 clamp(30px,4vw,42px)/1 Fraunces,Georgia,serif;text-align:right;white-space:nowrap}
+.rec .fee small{display:block;font:600 14px "Open Sans",sans-serif;opacity:.9}
+.rec .spec{grid-column:1/-1;font-size:clamp(17px,2vw,20px);font-weight:600}
+.rec .why{grid-column:1/-1;font-size:15px;opacity:.95}
+.rec.alt{background:var(--panel);color:var(--ink);border:2px dashed var(--amb)}.rec.alt .nm{color:var(--ink)}
+.rec.alt .k{color:var(--sundk)}
+.rec button{all:unset;cursor:pointer;text-decoration:underline;font-weight:700}
+.verdict{font:800 clamp(34px,5vw,54px)/1 Fraunces,Georgia,serif;letter-spacing:-.01em}
+.pos,td.n.pos{color:var(--good)}.neg,td.n.neg{color:var(--bad)}.bk,td.n.bk{color:var(--sundk)}
+.pts{border-left:4px solid var(--amb);padding:14px 18px}.pts h3{font:800 20px/1.2 Fraunces,Georgia,serif;margin:0 0 8px}.pts ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:15px}.pts .sp{margin-top:8px}
+.yrs h3{font:800 20px/1.2 Fraunces,Georgia,serif;margin:0 0 2px}.yrs p{margin:0 0 10px;font-size:13px;color:var(--mut)}
+.ybars{position:relative;display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:2px;height:150px}
+.ycol{position:relative;height:100%}.ycol i{position:absolute;left:0;right:0;border-radius:4px 4px 0 0}.ycol i.dn{border-radius:0 0 4px 4px}
+.ycol i.up{background:var(--green)}:root[data-theme=dark] .ycol i.up{background:var(--mint)}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .ycol i.up{background:var(--mint)}}.ycol i.dn{background:var(--amb)}
+.ycol.own::before{content:"";position:absolute;left:-2px;top:0;bottom:0;border-left:2px dashed var(--mut)}
+.yzero{position:absolute;left:0;right:0;border-top:1px solid var(--ink)}
+.ylab{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:2px;font-size:12px;color:var(--mut);text-align:center;margin-top:4px}
+.legend i.sws{border:1px solid var(--line)}:root[data-theme=dark] .legend i.sws{background:var(--yel)!important}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .legend i.sws{background:var(--yel)!important}}
+.pdfrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}.pdfb{min-height:46px;padding:0 20px;font:700 15px 'Open Sans',sans-serif;border:0;border-radius:9999px;background:var(--navy);color:#fff;cursor:pointer}:root[data-theme=dark] .pdfb{background:var(--yel);color:var(--navy)}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .pdfb{background:var(--yel);color:var(--navy)}}.pdfb:disabled{opacity:.6;cursor:wait}#pdfmsg{font-size:14px;color:var(--mut)}
+.cfgst{margin:10px 0 0;font-size:14px;color:var(--mint)}.cfgst b{color:#fff}.cfgst.warn{color:var(--yel)}
+.adm input:not([type=checkbox]),.adm select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;font-family:"Open Sans",sans-serif;min-height:38px;padding:6px 8px;font-size:14px;width:100%}.adm table{font-size:14px}.adm td{padding:4px 3px;vertical-align:middle}.adm th{padding:6px 3px}
+.adm .w5{min-width:5em}.adm .w7{min-width:7em}.adm .w10{min-width:10em}.adm .w16{min-width:16em}
+.abtn{min-height:44px;padding:0 18px;font:700 15px 'Open Sans',sans-serif;border-radius:9999px;cursor:pointer;border:1px solid var(--line);background:var(--bg);color:var(--ink)}.abtn.pri{background:var(--green);color:#fff;border-color:var(--green)}.abtn.sm{min-height:36px;padding:0 12px;font-size:13px}
+.arow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}.amsg{font-size:14px;font-weight:600}.amsg.bad{color:var(--bad)}.amsg.ok{color:var(--good)}
+.agen{display:grid;grid-template-columns:repeat(auto-fit,minmax(14em,1fr));gap:14px;max-width:700px}
+.ylog{font-size:13px;color:var(--mut);margin:6px 0 0;padding-left:18px}
+.adds{display:grid;gap:8px}.addr{display:grid;grid-template-columns:minmax(0,1fr) 6.5em;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}.addr b{display:block;font-size:15px}.addr span{font-size:13px;color:var(--mut)}.addr input[type=number]{min-height:40px;padding:6px 8px}.addr input[type=checkbox]{width:26px;height:26px;justify-self:end;accent-color:light-dark(#193f2e,#fdbd14)}
+.ykey{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--mut);margin-top:6px}
+.vsub{font-size:16px;margin-top:6px}
+.bills{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;height:250px;border-bottom:2px solid var(--ink);padding:0 4px}
+.bill{display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.stackb{display:flex;flex-direction:column;justify-content:flex-end;border-radius:6px 6px 0 0;overflow:hidden;transition:height .35s ease}
+.seg{display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#fff;overflow:hidden;white-space:nowrap;transition:height .35s ease}
+.seg.g{background:var(--grid);color:var(--navy)}.seg.f{background:var(--navy)}.seg.s{background:var(--green);color:var(--yel)}:root[data-theme=dark] .seg.s{background:var(--yel);color:var(--navy)}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .seg.s{background:var(--yel);color:var(--navy)}}
+.btop{font:800 26px/1.1 Fraunces,Georgia,serif;margin-bottom:6px;white-space:nowrap}
+.blab{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;font-size:14px;color:var(--mut);padding:6px 4px 0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mut)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5em,1fr));gap:10px}
+.fig2{border-top:1px solid var(--line);padding-top:8px}
+.fig2 b{display:block;font:800 26px/1.1 Fraunces,Georgia,serif;white-space:nowrap}
+.fig2 span{font-size:13px;color:var(--mut)}
+.sum{font-size:14px;color:var(--mut);border-left:3px solid var(--amb);padding:4px 0 4px 12px}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;color:var(--mut);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#tbl tbody tr{cursor:pointer}
+#tbl tbody tr:hover{background:var(--panel)}
+tr.sel{background:var(--sunsoft)!important}
+.pk{font:800 22px/1.1 Fraunces,Georgia,serif}.sp{font-size:13px;color:var(--mut)}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:99px;margin-left:6px;white-space:nowrap;vertical-align:3px}
+.tag.best{background:var(--yel);color:var(--navy)}.tag.ltd{border:1px solid var(--sundk);color:var(--sundk)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(18em,1fr));gap:20px 32px;font-size:15px}
+.notes h3{font-size:16px;margin:0 0 4px}
+.notes p,.notes ul{margin:0;color:var(--mut)}
+.notes ul{padding-left:18px}
+.tt td,.tt th{padding:7px 8px}
+a{color:inherit}
+@media(max-width:860px){.top{grid-template-columns:minmax(0,1fr)}.res{order:-1}}
+@media(max-width:600px){.bills{height:200px}table{font-size:13px}th,td{padding:6px 4px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 6px}.stack td::before{content:attr(data-l);color:var(--mut);font-weight:600;flex:none}.rec{grid-template-columns:minmax(0,1fr)}.rec .fee{text-align:left}}
+@media(prefers-reduced-motion:reduce){.stackb,.seg{transition:none}}
+</style>
+</head>
+<body>
+<section class="band" style="background:var(--green);color:#fff;padding-bottom:clamp(20px,3vw,36px)"><div class="wrap">
+<h1>Versofy monthly bill savings</h1>
+<p class="lede" style="color:var(--mint);margin:0">Enter the customer's bill and suburb or town. The calculator picks the supplier and tariff that most likely apply to a standalone home, and recommends a package. Uses the launch prices that apply from Monday 30 November 2026.</p>
+<p class="cfgst" id="cfgst">Loading the latest prices and tariffs…</p>
+</div></section>
+<section class="band" style="padding-top:clamp(20px,3vw,36px)"><div class="wrap">
+<div class="top">
+ <form class="panel" id="f" autocomplete="off">
+  <div class="field"><label class="lab" for="bill">Monthly electricity spend</label>
+   <div class="money"><span>R</span><input type="number" id="bill" min="200" max="30000" step="50" value="4500" inputmode="numeric"></div>
+   <div class="hint">Average month incl. VAT: electricity bill or prepaid tokens bought.</div></div>
+  <div class="field"><label class="lab" for="loc">Suburb or town</label>
+   <input type="text" id="loc" value="Randburg" placeholder="e.g. Centurion, Durbanville, Umhlanga" aria-autocomplete="list" aria-controls="sugg">
+   <div class="sugg" id="sugg" hidden role="listbox"></div></div>
+  <div class="field"><div class="lab">Customer buys electricity from</div>
+   <div class="seg2" id="who"><button type="button" data-w="muni" id="wMuni">Municipality</button><button type="button" data-w="esk" id="wEsk">Eskom directly</button></div>
+   <div class="tinfo" id="tinfo"></div>
+   <div class="hint">Not sure? The token slip or bill shows "Eskom" or the city's name.</div></div>
+  <div class="field"><div class="lab">Home's electricity supply</div>
+   <div class="seg2" id="ph"><button type="button" data-p="1" aria-pressed="true">Single-phase</button><button type="button" data-p="3" aria-pressed="false">Three-phase</button></div>
+   <div class="hint" id="phhint">Most homes are single-phase.</div></div>
+  <div class="field" id="addf" hidden><div class="lab">Add-ons</div><div class="adds" id="adds"></div><div class="hint">Added to every package below, with their monthly fees.</div></div>
+  <div class="field"><label class="lab" for="day">Use during daylight <output id="dayo"></output></label>
+   <input type="range" id="day" min="20" max="70" step="5" value="40">
+   <div class="hint">Raise it if someone is home or works from home in the day.</div></div>
+  <details><summary>Advanced: tariff and solar assumptions</summary>
+   <div class="field"><label class="lab" for="ovr">Use a specific tariff</label>
+    <select id="ovr"></select></div>
+   <div class="field" id="cusbox" hidden><div class="lab">Custom rate and fixed charge</div>
+    <div class="seg2"><div class="money"><span>R</span><input type="number" id="flat" step="0.05" value="4.20" aria-label="Rate per kWh"></div><div class="money"><span>R</span><input type="number" id="ffix" step="10" value="0" aria-label="Fixed charge per month"></div></div></div>
+   <div class="field"><label class="lab" for="yield">Solar yield per kWp per day <output id="yo"></output></label>
+    <input type="range" id="yield" min="3.5" max="5.6" step="0.1" value="4.6">
+    <div class="hint">Year-round average after losses. Set from the province.</div></div>
+   <div class="field"><label class="lab" for="dod">Battery used each night <output id="dodo"></output></label>
+    <input type="range" id="dod" min="50" max="95" step="5" value="80"></div>
+   <div class="field"><label class="lab" for="esc">Yearly tariff increase <output id="esco"></output></label>
+    <input type="range" id="esc" min="0" max="15" step="0.5" value="9"></div>
+   <div class="hint" style="margin-top:-6px">The yearly subscription increase is set for each package by admin. The subscription ends after year 10.</div></div>
+  </details>
+  <div class="field" style="margin-top:14px"><label class="lab" for="cname">Customer name, for the PDF proposal</label>
+   <input type="text" id="cname" placeholder="Optional, e.g. Mr and Mrs Dlamini" maxlength="60"></div>
+  <button type="button" id="reset" style="margin-top:6px;min-height:44px;padding:0 16px;font:700 15px 'Open Sans';border:0;border-radius:9999px;background:var(--yel);color:var(--navy);cursor:pointer">Start over</button>
+ </form>
+ <div class="res" aria-live="polite">
+  <div class="rec" id="rec"></div>
+  <div><div class="verdict" id="net"></div><div class="vsub" id="netsub"></div></div>
+  <div>
+   <div class="bills">
+    <div class="bill"><div class="btop" id="b1t"></div><div class="stackb" id="b1"></div></div>
+    <div class="bill"><div class="btop" id="b2t"></div><div class="stackb" id="b2"></div></div>
+   </div>
+   <div class="blab"><div>Today, grid only</div><div id="b2l">With Versofy</div></div>
+  </div>
+  <div class="legend"><span><i style="background:var(--navy)"></i>Fixed charges</span><span><i style="background:var(--grid)"></i>Grid electricity</span><span><i class="sws" style="background:var(--green)"></i>Versofy subscription</span></div>
+  <div class="figs" id="figs"></div>
+  <div class="yrs" id="yrs"></div>
+  <div class="panel pts" id="pts"></div>
+  <div class="sum" id="sum"></div>
+  <div class="pdfrow"><button type="button" class="pdfb" id="pdf">Customer proposal (PDF)</button><span id="pdfmsg" aria-live="polite">For the package shown above. Leaves out the sales talking points.</span></div>
+ </div>
+</div>
+</div></section>
+
+<section class="band" style="padding-top:0"><div class="wrap">
+<h2>All packages for this customer</h2>
+<p class="lede" style="margin-bottom:12px">Tap a row to compare it with the recommendation. Monthly fees are the Versofy launch prices from Monday 30 November 2026. Specs from versofy.energy, 25 November 2026. SUPERCHARGE is a limited Black Friday deal to 19 January 2027. A negative monthly figure is shown in amber: it is what the customer pays for battery backup.</p>
+<div class="scroll"><table class="stack" id="tbl">
+<thead><tr><th>Package</th><th>System</th><th class="n">Fee / month</th><th class="n">Solar used / month</th><th class="n">Grid bill after</th><th class="n">Net saving / month</th><th class="n">Net, 10 years</th><th class="n">Net, 20 years</th></tr></thead>
+<tbody></tbody></table></div>
+</div></section>
+
+<section class="band adm" id="admin" hidden style="border-top:2px dashed var(--amb)"><div class="wrap">
+<h2>Admin: prices, packages and tariffs</h2>
+<p class="lede" style="margin-bottom:8px"><button type="button" class="abtn sm" id="a_out" style="float:right">Sign out</button>Only signed-in admins see this. Saved changes apply straight away to every quote and PDF, for everyone using the calculator.</p>
+<p class="sp" id="alast"></p>
+<h3>General</h3>
+<div class="agen"><label class="field"><span class="lab">Yearly tariff increase, default %</span><input type="number" id="a_tesc" step="0.5" min="0" max="25"></label>
+<label class="field"><span class="lab">Prices effective from</span><input type="text" id="a_pdate" maxlength="40" placeholder="e.g. 30 November 2026"></label>
+<label class="field"><span class="lab">Tariffs valid for</span><input type="text" id="a_tyear" maxlength="20" placeholder="e.g. 2026/27"></label></div>
+<h3>Packages</h3>
+<div class="scroll"><table id="aprod"><thead><tr><th>Show</th><th>Name</th><th>Fee / month R</th><th>Yearly increase %</th><th>Panels</th><th>kWp</th><th>Inverter kW</th><th>Battery kWh</th><th>Supply</th><th>Guide: bills above R</th><th>Note (e.g. deal end date)</th><th></th></tr></thead><tbody></tbody></table></div>
+<div class="arow"><button type="button" class="abtn sm" id="a_add">Add a package</button></div>
+<h3>Add-ons</h3>
+<p class="sp" style="margin:0 0 8px">Sales see an add-on only when it is shown and has a monthly fee above R0. Its fee rises each year with the package's increase. Extra panels use the package's own panel size.</p>
+<div class="scroll"><table id="aadd"><thead><tr><th>Show</th><th>Name</th><th>Type</th><th>Size per add-on</th><th>Fee / month R</th><th>Most per quote</th><th></th></tr></thead><tbody></tbody></table></div>
+<div class="arow"><button type="button" class="abtn sm" id="a_addon">Add an add-on</button></div>
+<h3>Tariffs</h3>
+<p class="sp" style="margin:0 0 8px">Energy rates per kWh incl. VAT, as price blocks: "350=3.34, 500=3.83, *=4.44" means up to 350 kWh at R3.34, 351 to 500 at R3.83, and the rest at R4.44. One flat rate is "*=4.11".</p>
+<div class="scroll"><table id="atar"><thead><tr><th>Supplier</th><th>Tariff name</th><th>Fixed R / month</th><th>Energy rates</th><th>Warning shown to sales (optional)</th></tr></thead><tbody></tbody></table></div>
+<div class="arow"><button type="button" class="abtn pri" id="a_save">Save for everyone</button><button type="button" class="abtn" id="a_undo">Discard changes</button><button type="button" class="abtn" id="a_def">Load built-in values</button><span class="amsg" id="a_msg" aria-live="polite"></span></div>
+<h3 style="margin-top:18px">Recent changes</h3><ol class="ylog" id="a_log"><li>None yet.</li></ol>
+</div></section>
+
+<section class="band" style="background:light-dark(#c0ebbd,#193f2e);border-top:0"><div class="wrap">
+<h2>Which tariff the calculator picks</h2>
+<p class="lede" style="margin-bottom:12px">One tariff per supplier: the one a standalone, non-indigent home is most likely on, <span id="tyr">2026/27</span>, incl. VAT. Across suppliers a unit costs roughly R3.30 to R5.10.</p>
+<div class="scroll"><table class="tt" id="tt"><thead><tr><th>Supplier</th><th>Tariff used, and why</th><th>Energy rate per kWh</th><th class="n">Fixed / month</th></tr></thead><tbody></tbody></table></div>
+<div class="notes" style="margin-top:28px">
+ <div><h3>How the saving is worked out</h3><p>Monthly kWh is backed out of the spend through the tariff's price blocks. Solar covers daytime use directly; leftover solar charges the battery, which covers evening use up to its usable size. Surplus is not credited (no feed-in). The grid bill is re-priced on what is left, then the Versofy fee is added. The recommendation is the package with the best net monthly saving (grid bill reduction minus the Versofy fee) of all packages that suit the home's supply.</p><p style="margin-top:8px">Long term: the grid saving rises with the yearly tariff increase, less 0.5% a year for panel ageing; the fee rises with the subscription increase. Years 1 to 10 are saving minus fee. From year 11 the subscription ends and the customer keeps the system, so the whole grid saving counts.</p></div>
+ <div><h3>What it leaves out</h3><ul><li>Winter output is roughly 25–30% below summer; figures are year-round averages.</li><li>The value of backup power. When the monthly figure is negative, it is shown as the price of backup instead.</li><li>After year 10: upkeep and a battery replacement (batteries often last 10 to 15 years) are the customer's cost.</li><li>Maintenance, insurance and monitoring in the subscription.</li><li>Indigent, lifeline and time-of-use tariffs.</li></ul></div>
+ <div><h3>Sources</h3><ul>
+  <li><a href="https://www.versofy.energy/">versofy.energy</a> package specs; monthly fees from the Versofy launch price list, effective 30 November 2026</li>
+  <li><a href="https://www.solarguide.co.za/electricity-tariffs/">SolarGuide 2026/27 tariff tables</a> (Eskom, City Power, Cape Town, eThekwini, Ekurhuleni, Centlec, Buffalo City, Nelson Mandela Bay)</li>
+  <li><a href="https://podium.energy/homes/tshwane-electricity-tariffs">Tshwane 2026/27 incl. VAT</a>, <a href="https://energybee.co.za/guides/eskom-municipal-electricity-tariffs-explained-south-africa">Eskom Homelight vs Homepower</a></li>
+  <li><a href="https://resource.capetown.gov.za/documentcentre/Documents/Procedures,%20guidelines%20and%20regulations/Understanding-residential-electricity-tariffs.pdf">Cape Town: who pays Home User</a></li>
+ </ul></div>
+</div>
+<details class="panel" id="alogin" style="margin-top:28px;max-width:460px"><summary>Admin sign-in</summary>
+<form id="alf" style="display:grid;gap:10px;margin-top:8px"><label><span class="lab">Your name</span><input type="text" name="name" maxlength="60" required autocomplete="name"></label><label><span class="lab">Admin password</span><input type="password" name="pw" required autocomplete="current-password"></label><div class="arow" style="margin:0"><button class="abtn pri" type="submit">Sign in</button><span class="amsg" id="alm" aria-live="polite"></span></div></form></details>
+<div class="panel" id="disc" style="margin-top:28px;font-size:14px"><h3 style="font-size:16px;margin:0 0 6px">Disclaimer</h3><p style="margin:0 0 6px;color:var(--mut)">This is an estimate, not a quote or an offer. It is based only on the information the customer gave us: their average monthly electricity spend, suburb or town, electricity supplier and type of supply. We have not checked this information.</p><p style="margin:0 0 6px;color:var(--mut)">The figures come from a simplified model. It uses year-round average solar output, an assumed daytime share of use and fixed yearly increases, so actual savings will vary with weather, usage, the installation and future tariff changes.</p><p style="margin:0 0 6px;color:var(--mut)">Versofy does not determine which tariff the customer is on. The calculator uses the tariff a standalone home with this supplier is most likely to be on, at published <span class="tyr2">2026/27</span> rates incl. VAT. We cannot confirm that these rates match the customer's own tariff or bill, and the results will differ if they do not.</p><p style="margin:0 0 6px;color:var(--mut)">Final figures depend on a site assessment and the signed Versofy subscription agreement.</p></div>
+<p class="sp" style="margin-top:16px">The suburb list is a guide, so confirm the supplier with the customer. Nelson Mandela Bay rates are proposed and under dispute; Centlec's are averaged over summer and winter with VAT added; one source lists a R142.50 Tshwane basic charge that others don't.</p>
+</div></section>
+
+<script src="/vendor/jspdf.umd.min.js"></script>
+<script>
+{
+const DEF_PK=[
+ {n:"GROW",fee:1399,esc:8.5,kwp:3.68,pan:8,inv:5,bat:5,sup:"1",min:1500,ltd:"",on:true},
+ {n:"CHARGE",fee:2299,esc:8,kwp:4.6,pan:10,inv:8,bat:9.92,sup:"1",min:3000,ltd:"",on:true},
+ {n:"PLUS",fee:2699,esc:8,kwp:5.52,pan:12,inv:12,bat:9.92,sup:"3",min:7000,ltd:"",on:true},
+ {n:"MAX",fee:3399,esc:7,kwp:6.44,pan:14,inv:12,bat:14.88,sup:"1",min:6000,ltd:"",on:true},
+ {n:"EPIC",fee:3599,esc:7,kwp:6.44,pan:14,inv:16,bat:14.88,sup:"1",min:8000,ltd:"",on:true},
+ {n:"SUPERCHARGE",fee:4399,esc:7,kwp:12,pan:20,inv:12,bat:19.8,sup:"13",min:6000,ltd:"Black Friday deal, to 19 Jan 2027",on:true}
+];
+const DEF_ADD=[{id:"bat",n:"Extra battery",type:"bat",val:5,fee:0,max:3,on:true},{id:"pan",n:"Extra panel",type:"pan",val:1,fee:0,max:8,on:true},{id:"inv",n:"Bigger inverter",type:"inv",val:8,fee:0,max:1,on:true}];
+const ATYP={bat:["Battery","kWh each"],pan:["Panels","panels each"],inv:["Inverter upgrade","kW inverter"]};
+const normA=a=>{const type=ATYP[a.type]?a.type:"bat";return {id:clean(a.id,30).replace(/[^A-Za-z0-9_-]/g,"")||"a"+Math.random().toString(36).slice(2,8),n:clean(a.n,40)||"Add-on",type,val:num(a.val,0,200,0),fee:num(a.fee,0,1e5,0),max:type==="inv"?1:Math.round(num(a.max,1,50,1)),on:a.on!==false}};
+const DEF_GEN={tesc:9,pdate:"30 November 2026",tyear:"2026/27",asOf:"26 November 2026"};
+const SUPL={"1":"Single-phase","13":"Single or three-phase","3":"Three-phase only"};
+const clean=(v,n=120)=>String(v??"").replace(/[<>&"'`]/g,"").slice(0,n);
+const num=(v,lo,hi,d)=>{const x=+v;return Number.isFinite(x)?Math.min(hi,Math.max(lo,x)):d};
+const normP=p=>{const sup=["1","13","3"].includes(String(p.sup))?String(p.sup):"1";return {n:clean(p.n,24)||"PACKAGE",fee:num(p.fee,0,1e6,0),esc:num(p.esc,0,30,0),kwp:num(p.kwp,0,200,0),pan:Math.round(num(p.pan,0,500,0)),inv:num(p.inv,0,200,0),bat:num(p.bat,0,500,0),sup,ph:sup==="3"?[3]:[1,3],min:num(p.min,0,1e6,0),ltd:clean(p.ltd,80),on:p.on!==false}};
+let PK=DEF_PK.map(normP);
+let ADD=DEF_ADD.map(normA);
+const PHL=p=>SUPL[p.sup];
+const addTxt=(a,q)=>a.type==="inv"?`${a.n} (${a.val} kW)`:a.type==="bat"?`${q} × ${a.n} (${+(a.val*q).toFixed(2)} kWh)`:`${q} × ${a.n} (${a.val*q} panel${a.val*q>1?"s":""})`;
+function withAdd(p){let kwp=p.kwp,pan=p.pan,bat=p.bat,inv=p.inv,afee=0;const adds=[];const per=p.pan?p.kwp/p.pan:0.46;
+ for(const a of ADD){if(!a.on||!(a.fee>0))continue;const q=Math.min(a.max,Math.max(0,Math.round(st.add[a.id]||0)));if(!q)continue;
+  if(a.type==="bat"){bat+=a.val*q;afee+=a.fee*q;adds.push(addTxt(a,q))}
+  else if(a.type==="pan"){pan+=a.val*q;kwp+=a.val*q*per;afee+=a.fee*q;adds.push(addTxt(a,q))}
+  else if(a.val>inv){inv=a.val;afee+=a.fee;adds.push(addTxt(a,1))}}
+ return {...p,kwp:+kwp.toFixed(2),pan,bat:+bat.toFixed(2),inv,base:p.fee,afee,fee:p.fee+afee,adds}}
+// blocks [upper kWh, R/kWh incl VAT]
+const T={
+ jhb:{s:"City Power (Johannesburg)",n:"City Power standard prepaid home",why:"Standard tariff for non-indigent prepaid homes",fix:241.5,b:[[350,3.34],[500,3.83],[1e9,4.44]]},
+ jhbc:{s:"City Power (Johannesburg)",n:"City Power monthly account (credit meter)",why:"Homes billed monthly on a credit meter",fix:1069.93,b:[[500,3.32],[1000,3.80],[2000,4.09],[3000,4.31],[1e9,4.52]],adv:1},
+ tsh:{s:"City of Tshwane",n:"Tshwane domestic",why:"Same rates for prepaid and credit meters",fix:0,b:[[100,3.73],[400,4.36],[650,4.75],[1e9,5.12]]},
+ ekh:{s:"City of Ekurhuleni",n:"Ekurhuleni residential Tariff B",why:"Applies to homes over 750 kWh a month or with solar",fix:126.25,b:[[1e9,3.88]]},
+ cpt:{s:"City of Cape Town",n:"Cape Town Home User",why:"Applies to homes valued over R1m, credit meters and homes with solar",fix:424.3,b:[[600,3.56],[1e9,4.69]]},
+ cptd:{s:"City of Cape Town",n:"Cape Town Domestic (prepaid, home under R1m)",why:"Prepaid homes under R1m without solar",fix:74.78,b:[[600,4.14],[1e9,4.94]],adv:1},
+ dbn:{s:"eThekwini (Durban)",n:"eThekwini residential",why:"Flat rate for prepaid and monthly homes",fix:0,b:[[1e9,4.11]]},
+ nmb:{s:"Nelson Mandela Bay",n:"Nelson Mandela Bay domestic (proposed)",why:"Non-indigent domestic; rates still disputed",fix:91.54,b:[[250,3.85],[500,4.58],[1e9,5.07]],flag:"Proposed rates, under dispute"},
+ mng:{s:"Centlec (Mangaung)",n:"Centlec domestic",why:"Standard domestic, summer/winter averaged",fix:57.5,b:[[350,3.91],[1e9,4.64]],flag:"VAT basis estimated"},
+ bcm:{s:"Buffalo City",n:"Buffalo City domestic prepaid",why:"Non-indigent prepaid homes",fix:530.15,b:[[2000,3.87],[1e9,4.08]]},
+ oth:{s:"Other municipality",n:"Typical municipal home (estimate)",why:"No local tariff loaded; typical 2026/27 level",fix:150,b:[[1e9,4.00]],flag:"Estimate, check a bill"},
+ eskl:{s:"Eskom direct",n:"Eskom Homelight 60A",why:"Most Eskom prepaid homes with smaller use",fix:0,b:[[1e9,3.44]]},
+ eskp:{s:"Eskom direct",n:"Eskom Homepower 4 (standard home)",why:"Standard Eskom home tariff for larger use",fix:543,b:[[1e9,3.56]]},
+ cus:{s:"Custom",n:"Custom rate",why:"",fix:0,b:[[1e9,4.2]],adv:1}
+};
+const DEF_T=JSON.parse(JSON.stringify(T));
+const Y={GP:4.6,WC:4.4,KZN:4.0,EC:4.3,FS:4.9,NC:5.4,NW:4.8,LP:4.7,MP:4.4};
+const PN={GP:"Gauteng",WC:"Western Cape",KZN:"KwaZulu-Natal",EC:"Eastern Cape",FS:"Free State",NC:"Northern Cape",NW:"North West",LP:"Limpopo",MP:"Mpumalanga"};
+// name|supplier|province|p = parts buy from Eskom directly
+const RAW={
+ "jhb|GP":"Sandton;Bryanston;Randburg;Fourways|p;Midrand|p;Kyalami|p;Rosebank;Melville;Northcliff;Roodepoort;Florida;Parktown;Houghton;Killarney;Linden;Greenside;Craighall;Morningside, Johannesburg;Rivonia;Sunninghill;Lonehill;Douglasdale;Honeydew;Weltevreden Park;Ruimsig;Mondeor;Johannesburg South;Lenasia;Alexandra;Johannesburg CBD;Soweto|p;Diepsloot|p;Orange Farm|p;Cosmo City|p",
+ "tsh|GP":"Pretoria;Centurion;Hatfield;Brooklyn;Waterkloof;Menlo Park;Lynnwood;Garsfontein;Faerie Glen;Moreleta Park;Montana;Sinoville;Pretoria North;Wonderboom;Silverton;Mamelodi;Atteridgeville;Irene;Midstream;Rooihuiskraal;Eldoraigne;Valhalla;Akasia;Soshanguve|p;Mabopane|p;Ga-Rankuwa|p;Cullinan;Bronkhorstspruit",
+ "ekh|GP":"Benoni;Boksburg;Germiston;Kempton Park;Edenvale;Bedfordview;Alberton;Brakpan;Springs;Nigel;Tembisa|p;Daveyton;Modderfontein;Greenstone;Glen Marais;Birchleigh;Bapsfontein|p",
+ "cpt|WC":"Cape Town City Centre;Sea Point;Green Point;Camps Bay;Claremont;Rondebosch;Newlands;Constantia;Tokai;Bergvliet;Plumstead;Wynberg;Muizenberg;Fish Hoek;Noordhoek;Hout Bay;Durbanville|p;Bellville;Brackenfell|p;Kraaifontein|p;Kuils River|p;Blouberg;Table View;Milnerton;Parklands;Melkbosstrand;Somerset West|p;Strand;Gordon's Bay;Pinelands;Goodwood;Parow;Atlantis;Khayelitsha|p;Mitchells Plain|p;Gugulethu|p;Philippi|p;Delft|p",
+ "dbn|KZN":"Durban;Umhlanga;Westville;Pinetown;Hillcrest;Kloof;Gillitts;Durban North;Morningside, Durban;Berea;Glenwood;Amanzimtoti;Queensburgh;Chatsworth;Phoenix;Umlazi|p;KwaMashu;Mount Edgecombe;La Lucia;Waterfall;Kingsburgh;Bluff;Verulam",
+ "nmb|EC":"Gqeberha (Port Elizabeth);Summerstrand;Walmer;Newton Park;Lorraine;Despatch;Kariega (Uitenhage);Motherwell;Bluewater Bay;Theescombe",
+ "mng|FS":"Bloemfontein;Langenhovenpark;Fichardt Park;Universitas;Brandwag;Botshabelo;Thaba Nchu",
+ "bcm|EC":"East London;Beacon Bay;Gonubie;Vincent;Nahoon;Qonce (King William's Town);Mdantsane;Bhisho",
+ "oth|LP":"Polokwane;Tzaneen;Mokopane;Bela-Bela;Thohoyandou|p",
+ "oth|MP":"Mbombela (Nelspruit);White River|p;eMalahleni (Witbank);Middelburg;Secunda",
+ "oth|NW":"Rustenburg;Hartbeespoort|p;Brits;Potchefstroom;Klerksdorp;Mahikeng",
+ "oth|GP":"Krugersdorp;Vanderbijlpark;Vereeniging;Meyerton|p;Heidelberg",
+ "oth|NC":"Kimberley;Upington",
+ "oth|FS":"Welkom;Kroonstad;Bethlehem",
+ "oth|KZN":"Pietermaritzburg;Richards Bay;Ballito;Newcastle;Port Shepstone",
+ "oth|WC":"Stellenbosch;Paarl;George;Mossel Bay;Knysna;Hermanus;Worcester;Saldanha",
+ "oth|EC":"Makhanda (Grahamstown);Jeffreys Bay;Port Alfred;Mthatha|p"
+};
+const PL=[];for(const k in RAW){const[m,p]=k.split("|");for(const x of RAW[k].split(";")){const[n,f]=x.split("|");PL.push({n,m,p,e:f==="p"})}}
+const $=id=>document.getElementById(id);
+const R=v=>(v<-0.5?"−":"")+"R"+Math.round(Math.abs(v)).toLocaleString("en-ZA").replace(/[,  ]/g," ");
+const RS=v=>(Math.round(v)>0?"+":"")+R(v);
+const CL=v=>Math.round(v)>=0?"pos":"neg";
+const CM=v=>Math.round(v)>=0?"pos":"bk";
+const DEG=0.005,ESS=0.5;let LAST=null;
+const proj=(sav,fee,esc,se)=>Array.from({length:20},(_,i)=>12*(sav*((1+esc)*(1-DEG))**i-(i<10?fee*(1+se)**i:0)));
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const K=v=>Math.round(v).toLocaleString("en-ZA").replace(/[,  ]/g," ");
+const rateTxt=t=>t.b.length===1?"R"+t.b[0][1].toFixed(2)+" flat":t.b.map((x,i)=>{const lo=i?t.b[i-1][0]:0;return (x[0]>1e8?"over "+lo:(lo?lo+1:0)+"–"+x[0])+" kWh R"+x[1].toFixed(2)}).join(" · ");
+const DAYS=30.4,ETA=0.9;
+const st={add:{},place:PL.find(p=>p.n==="Randburg"),who:"muni",ph:1,sel:null,ovr:""};
+$("ovr").innerHTML='<option value="">Automatic (recommended)</option>'+Object.entries(T).map(([k,t])=>`<option value="${k}">${t.n}</option>`).join("");
+const renderTT=()=>{$("tt").tBodies[0].innerHTML=["jhb","tsh","ekh","cpt","dbn","nmb","mng","bcm","eskl","eskp","oth"].map(k=>{const t=T[k];return `<tr><td>${t.s}</td><td><b>${t.n}</b><div class="sp">${t.why}${k==="eskl"?"; used up to R2 000 a month":k==="eskp"?"; used above R2 000 a month":""}</div></td><td>${rateTxt(t)}</td><td class="n">${R(t.fix)}</td></tr>`}).join("")};renderTT();
+const cost=(t,kwh)=>{let c=t.fix,lo=0;for(const[up,r]of t.b){if(kwh<=lo)break;c+=(Math.min(kwh,up)-lo)*r;lo=up}return c};
+const kwhFrom=(t,bill)=>{let left=bill-t.fix,lo=0,k=0;if(left<=0)return 0;for(const[up,r]of t.b){const cap=(up-lo)*r;if(left<=cap)return k+left/r;k+=up-lo;left-=cap;lo=up}return k};
+function pickTariff(bill){
+ if(st.ovr){const t=T[st.ovr];if(st.ovr==="cus"){t.b=[[1e9,+$("flat").value||0]];t.fix=+$("ffix").value||0}return st.ovr}
+ if(st.who==="esk")return bill<=2000?"eskl":"eskp";
+ return st.place?st.place.m:"oth";
+}
+function model(p,t,kwh,d,y,dod){
+ const L=kwh/DAYS,P=p.kwp*y,day=L*d,night=L-day,direct=Math.min(P,day),surplus=P-direct;
+ const stored=Math.min(surplus*ETA,p.bat*dod,night),used=Math.min((direct+stored)*DAYS,kwh),grid=kwh-used,after=cost(t,grid);
+ return {prod:P*DAYS,direct:direct*DAYS,stored:stored*DAYS,used,grid,after,waste:Math.max(0,P*DAYS-used)};
+}
+function setPlace(pl,keepWho){
+ st.place=pl;$("loc").value=pl?pl.n:$("loc").value;
+ if(!keepWho)st.who="muni";
+ if(pl)$("yield").value=Y[pl.p];
+ $("sugg").hidden=true;calc();
+}
+function calc(){
+ const bill=Math.max(0,+$("bill").value||0),d=$("day").value/100,y=+$("yield").value,dod=$("dod").value/100,esc=$("esc").value/100;
+ $("dayo").textContent=Math.round(d*100)+"%";$("yo").textContent=y.toFixed(1)+" kWh";$("dodo").textContent=Math.round(dod*100)+"%";$("esco").textContent=$("esc").value+"%";
+ const tk=pickTariff(bill),t=T[tk];
+ $("cusbox").hidden=st.ovr!=="cus";
+ const pl=st.place,muniName=pl?T[pl.m].s:"Municipality";
+ $("wMuni").textContent=pl&&pl.m!=="oth"?muniName:"Municipality";
+ $("wMuni").setAttribute("aria-pressed",st.who==="muni");$("wEsk").setAttribute("aria-pressed",st.who==="esk");
+ for(const b of $("ph").children)b.setAttribute("aria-pressed",+b.dataset.p===st.ph);
+ const kwh=kwhFrom(t,bill),avg=kwh?(bill-t.fix)/kwh:0;
+ $("tinfo").innerHTML=`<b>Tariff used: ${t.n}</b>${rateTxt(t)} + ${R(t.fix)}/month fixed. About ${K(kwh)} kWh a month at this spend.`+(t.flag?`<div class="warn">${t.flag}</div>`:"")+(pl&&pl.e&&st.who==="muni"?`<div class="warn">Parts of ${pl.n} buy directly from Eskom: confirm with the customer.</div>`:"")+(pl?`<div class="sp">${pl.n}, ${PN[pl.p]} · solar yield ${Y[pl.p]} kWh/kWp/day</div>`:"");
+ const rows=PK.map(withAdd).map(p=>{const m=model(p,t,kwh,d,y,dod),net=bill-m.after-p.fee,yr=proj(bill-m.after,p.fee,esc,p.esc/100);return {p,m,net,yr,n10:sum(yr.slice(0,10)),n20:sum(yr),ok:p.ph.includes(st.ph),fit:bill>=p.min}});
+ const tp=PK.filter(p=>p.sup==="3").map(p=>p.n);$("phhint").textContent="Most homes are single-phase."+(tp.length?" "+tp.join(", ")+(tp.length>1?" need":" needs")+" three-phase.":"");
+ const okr=rows.filter(r=>r.ok);
+ if(!okr.length){$("rec").className="rec alt";$("rec").innerHTML='<div class="k">No package available</div><div class="spec">No package is set up for this supply. Ask an admin to check the package list.</div>';$("tbl").tBodies[0].innerHTML="";LAST=null;return}
+ const rec=okr.reduce((a,b)=>b.net>a.net?b:a);
+ const cur=rows.find(r=>r.p.n===st.sel)||rec,{p,m,net}=cur,isRec=cur===rec;
+ const why=`Best net monthly saving of all ${okr.length} packages${st.ph===1?" that suit a single-phase home":""}, after the Versofy fee.`+(rec.fit?"":` Versofy's guide lists ${rec.p.n} for bills above ${R(rec.p.min)}.`);
+ $("rec").className="rec"+(isRec?"":" alt");
+ $("rec").innerHTML=`<div class="k">${isRec?"Recommended package":"Comparing with recommended "+rec.p.n+' · <button type="button" id="back">Show recommended</button>'}</div><div class="nm">${p.n}</div><div class="fee">${R(p.fee)}<small>per month${p.afee?" incl. "+R(p.afee)+" add-ons":""}</small></div><div class="spec">${p.pan} panels (${p.kwp} kWp) · ${p.inv} kW inverter · ${p.bat} kWh battery${p.adds.length?`<div style="font-size:15px;font-weight:600;color:var(--mint)">With ${p.adds.join(", ")}</div>`:""}</div><div class="why">${isRec?why:(cur.fit?"":"Versofy lists this for bills above "+R(p.min)+". ")+(cur.ok?"":"Needs a three-phase supply. ")+(p.ltd||"")}</div>`;
+ const neg=Math.round(net)<0,sav=bill-m.after,hrs=Math.round(p.bat*dod/ESS),hTxt=hrs>24?"more than a day":"about "+hrs+" hours";
+ const yr=cur.yr,cross=yr.findIndex(x=>x>0),sav11=sav*((1+esc)*(1-DEG))**10;
+ const v=$("net");v.textContent=neg?"Battery backup for "+R(-net)+" a month":"Saves "+R(net)+" a month";v.className="verdict "+(neg?"bk":"pos");
+ $("netsub").textContent=neg?`The solar takes ${R(sav)} off the grid bill, which pays for most of the ${R(p.fee)} subscription. The ${R(-net)} extra is the effective price of backup power: a ${p.bat} kWh battery that runs essentials for ${hTxt} in an outage.`:`after the ${R(p.fee)} subscription. Grid bill drops from ${R(bill)} to ${R(m.after)}, and the home gets backup power.`;
+ const H=Math.max(bill,m.after+p.fee,1),fx=Math.min(t.fix,bill);
+ const seg=(c,val,lab)=>`<div class="seg ${c}" style="height:${(Math.max(val,0)/H*100).toFixed(2)}%">${val/H>.09?lab:""}</div>`;
+ $("b1").style.height=(bill/H*100)+"%";$("b1").innerHTML=seg("g",bill-fx,R(bill-fx))+seg("f",fx,"Fixed");
+ $("b2").style.height=((m.after+p.fee)/H*100)+"%";$("b2").innerHTML=seg("s",p.fee,p.n+" "+R(p.fee))+seg("g",m.after-t.fix,R(m.after-t.fix))+seg("f",t.fix,"Fixed");
+ $("b1t").textContent=R(bill);$("b2t").textContent=R(m.after+p.fee);$("b2l").textContent="With "+p.n;
+ $("figs").innerHTML=[[K(m.used)+" kWh","solar used a month, "+Math.round(m.used/Math.max(kwh,1)*100)+"% of use",""],[R(sav),"off the grid bill a month",""],[RS(cur.n10),"net over 10 years, tariffs +"+$("esc").value+"%, fee +"+p.esc+"% a year",CM(cur.n10)],[RS(cur.n20),"net over 20 years; no fee after year 10",CL(cur.n20)]].map(([b,s,c])=>`<div class="fig2"><b class="${c}">${b}</b><span>${s}</span></div>`).join("");
+ const mx=Math.max(...yr.map(Math.abs),1),hasNeg=yr.some(x=>x<0),up=hasNeg?Math.max(...yr,0)/(Math.max(...yr,0)-Math.min(...yr,0)||1):1,z=(up*100).toFixed(2),span=Math.max(...yr,0)-Math.min(...yr,0)||1;
+ $("yrs").innerHTML=`<h3>Net saving each year with ${p.n}</h3><p>Grid saving minus the subscription. Hover a bar for the year's figure.</p><div class="ybars" role="img" aria-label="Yearly net saving over 20 years for ${p.n}">${yr.map((x,i)=>`<div class="ycol${i===10?" own":""}" title="Year ${i+1}: ${RS(x)}${i>=10?" (no subscription)":""}">${x>=0?`<i class="up" style="bottom:${(100-z)}%;height:${(x/span*100).toFixed(2)}%"></i>`:`<i class="dn" style="top:${z}%;height:${(-x/span*100).toFixed(2)}%"></i>`}</div>`).join("")}<div class="yzero" style="top:${z}%"></div></div><div class="ylab">${yr.map((_,i)=>`<span>${[0,4,9,14,19].includes(i)?i+1:""}</span>`).join("")}</div><div class="ykey"><span>Years 1–10: subscription</span><span>Years 11–20: system is the customer's</span></div>`;
+ const pts=[neg?`“Your grid bill drops from ${R(bill)} to ${R(m.after)} a month. The solar pays for ${R(sav)} of the ${R(p.fee)} subscription.”`:`“You save ${R(net)} a month from the first month, after the ${R(p.fee)} subscription.”`,
+  neg?`“The ${R(-net)} a month on top is what you pay for backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${hTxt} when the power goes off.”`:`“You also get backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${hTxt} when the power goes off.”`,
+  cross>0&&cross<10?`“Electricity tariffs go up about ${$("esc").value}% a year; the subscription goes up ${p.esc}% a year. From year ${cross+1} your saving is bigger than the fee.”`:`“Electricity tariffs go up about ${$("esc").value}% a year; the subscription ${p.esc}% a year, so the saving grows faster than the fee.”`,
+  cur.n10>=0?`“Over 10 years you come out about ${R(cur.n10)} ahead.”`:`“Over 10 years, backup power costs you about ${R(-cur.n10)} in total, about ${R(-cur.n10/120)} a month on average.”`,
+  `“After 10 years the subscription ends and the system is yours. By then it saves about ${R(sav11)} a month on the grid bill: ${cur.n20>=0?"about "+R(cur.n20)+" net in your favour":"a net of "+RS(cur.n20)} over 20 years.”`];
+ LAST={p,m,net,neg,bill,t,kwh,yr,n10:cur.n10,n20:cur.n20,cross,sav,sav11,hTxt,d,y,dod,esc:$("esc").value,se:p.esc,pl,isRec,used:m.used};
+ $("pts").innerHTML=`<h3>What to say to the customer</h3><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
+ $("sum").textContent=`Worked sum: ${K(kwh)} kWh/month at about R${avg.toFixed(2)}/kWh. ${p.kwp} kWp × ${y.toFixed(1)} kWh × 30.4 days = ${K(m.prod)} kWh made; ${K(m.direct)} kWh used in daylight + ${K(m.stored)} kWh from the battery at night. ${K(m.grid)} kWh still from the grid = ${R(m.after)}. ${R(bill)} − ${R(m.after)} − ${R(p.fee)} = ${R(net)}. ${K(m.waste)} kWh of solar not used (no feed-in).`;
+ $("tbl").tBodies[0].innerHTML=rows.map(r=>`<tr tabindex="0" data-n="${r.p.n}" class="${r===cur?"sel":""}"><td data-l="Package"><span><span class="pk">${r.p.n}</span>${r===rec?'<span class="tag best">Recommended</span>':""}${r.p.ltd?`<span class="tag ltd">Limited</span>`:""}${!r.fit?`<div class="sp">Versofy: bills above ${R(r.p.min)}</div>`:""}${!r.ok?`<div class="sp">Needs three-phase</div>`:""}</span></td><td data-l="System"><span>${r.p.pan} panels, ${r.p.kwp} kWp · ${r.p.inv} kW · ${r.p.bat} kWh<div class="sp">${PHL(r.p)}</div></span></td><td class="n" data-l="Fee / month"><span>${R(r.p.fee)}<div class="sp">+${r.p.esc}% a year</div></span></td><td class="n" data-l="Solar used">${K(r.m.used)} kWh</td><td class="n" data-l="Grid bill after">${R(r.m.after)}</td><td class="n ${CM(r.net)}" data-l="Net / month">${RS(r.net)}</td><td class="n ${CM(r.n10)}" data-l="Net, 10 years">${RS(r.n10)}</td><td class="n ${CL(r.n20)}" data-l="Net, 20 years">${RS(r.n20)}</td></tr>`).join("");
+ try{localStorage.setItem("vsf-calc2",JSON.stringify({bill:$("bill").value,loc:st.place&&st.place.n,who:st.who,ph:st.ph,day:$("day").value}))}catch(e){}
+}
+
+const DISC=["This is an estimate, not a quote or an offer. It is based only on the information the customer gave us: their average monthly electricity spend, suburb or town, electricity supplier and type of supply. We have not checked this information.", "The figures come from a simplified model. It uses year-round average solar output, an assumed daytime share of use and fixed yearly increases, so actual savings will vary with weather, usage, the installation and future tariff changes.", "Versofy does not determine which tariff the customer is on. The calculator uses the tariff a standalone home with this supplier is most likely to be on, at published 2026/27 rates incl. VAT. We cannot confirm that these rates match the customer's own tariff or bill, and the results will differ if they do not.", "Final figures depend on a site assessment and the signed Versofy subscription agreement."];
+const A=s=>String(s).replace(/[−–—]/g,"-").replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/[  ]/g," ");
+const PDFR=v=>A(R(v)),PDFS=v=>A(RS(v));
+function buildPdf(){
+ const J=window.jspdf&&window.jspdf.jsPDF;if(!J||!LAST)return null;
+ const L=LAST,{p,m}=L,doc=new J({unit:"mm",format:"a4"}),W=210,M=16;
+ const G=[25,63,46],Yl=[253,189,20],N=[18,20,66],Mi=[192,235,189],Am=[250,162,27],Mu=[77,90,82],Cr=[241,233,223],Gd=[1,113,77];
+ const col=c=>doc.setTextColor(...c),fill=c=>doc.setFillColor(...c);
+ const txt=(t,x,y,o={})=>{doc.setFont("helvetica",o.b?"bold":"normal");doc.setFontSize(o.s||10);col(o.c||N);doc.text(A(t),x,y,o.a?{align:o.a}:undefined)};
+ const wrap=(t,x,y,w,o={})=>{doc.setFont("helvetica",o.b?"bold":"normal");doc.setFontSize(o.s||10);col(o.c||N);const ls=doc.splitTextToSize(A(t),w);doc.text(ls,x,y);return y+ls.length*(o.s||10)*0.42};
+ const name=$("cname").value.trim(),today=new Date().toLocaleDateString("en-ZA",{day:"numeric",month:"long",year:"numeric"});
+ // header
+ fill(G);doc.rect(0,0,W,34,"F");
+ txt("Versofy solar savings proposal",M,15,{s:20,b:1,c:[255,255,255]});
+ txt(name?"Prepared for "+name:"Prepared for you",M,22.5,{s:11,c:Mi});
+ txt(today+"  |  Prices from "+GEN.pdate+"  |  Rates as at "+GEN.asOf,M,29,{s:9,c:Mi});
+ txt("versofy.energy",W-M,29,{s:9,c:Mi,a:"right"});
+ // package plate
+ let y=45;const ex=p.adds.length?5:0;fill(Cr);doc.roundedRect(M,y-6,W-2*M,30+ex,3,3,"F");
+ txt(L.isRec?"Recommended package":"Package",M+6,y+1,{s:9,b:1,c:Mu});
+ txt(p.n,M+6,y+13,{s:26,b:1,c:G});
+ txt(PDFR(p.fee),W-M-6,y+11,{s:18,b:1,a:"right"});txt(p.afee?"per month incl. "+PDFR(p.afee)+" add-ons":"per month incl. VAT",W-M-6,y+17,{s:8,c:Mu,a:"right"});
+ txt(`${p.pan} panels (${p.kwp} kWp)  |  ${p.inv} kW inverter  |  ${p.bat} kWh battery`,M+6,y+20,{s:10});
+ if(ex)txt("With "+p.adds.join(", "),M+6,y+25,{s:9,b:1,c:G});
+ // headline
+ y=79+ex;
+ if(L.neg){txt("Battery backup for "+PDFR(-L.net)+" a month",M,y,{s:18,b:1,c:[154,90,0]});
+  y=wrap(`The solar takes ${PDFR(L.sav)} a month off your grid bill, which pays for most of the ${PDFR(p.fee)} subscription. The ${PDFR(-L.net)} extra is the effective price of backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${L.hTxt} when the power goes off.`,M,y+7,W-2*M,{s:10});}
+ else{txt("You save "+PDFR(L.net)+" a month",M,y,{s:18,b:1,c:Gd});
+  y=wrap(`From the first month, after the ${PDFR(p.fee)} subscription. You also get backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${L.hTxt} when the power goes off.`,M,y+7,W-2*M,{s:10});}
+ // monthly table
+ y+=6;txt("Your monthly bill",M,y,{s:12,b:1});y+=3;
+ const rowsM=[["Electricity today, grid only",PDFR(L.bill)],["Grid bill with Versofy",PDFR(m.after)],["Versofy "+p.n+" subscription"+(p.afee?" incl. add-ons ("+PDFR(p.base)+" + "+PDFR(p.afee)+")":""),PDFR(p.fee)],["Total with Versofy",PDFR(m.after+p.fee)],[L.neg?"Effective price of battery backup":"Net saving each month",L.neg?PDFR(-L.net):PDFR(L.net)]];
+ rowsM.forEach((r,i)=>{y+=6.3;doc.setDrawColor(220,207,191);doc.line(M,y+2.2,W-M,y+2.2);const b=i>=3;txt(r[0],M,y,{s:10,b});txt(r[1],W-M,y,{s:10,b,a:"right",c:i===4?(L.neg?[154,90,0]:Gd):N})});
+ // long term
+ y+=13;txt("Over the years",M,y,{s:12,b:1});
+ const bx=[["Net over 10 years",PDFS(L.n10),"while you pay the subscription"],["Net over 20 years",PDFS(L.n20),"no subscription after year 10"],["Grid saving in year 11",PDFR(L.sav11)+"/mo","the system is yours"]];
+ const cw=(W-2*M-8)/3;bx.forEach((b,i)=>{const x=M+i*(cw+4);fill(i===1?Mi:Cr);doc.roundedRect(x,y+3,cw,22,2,2,"F");txt(b[0],x+4,y+9,{s:8,b:1,c:Mu});txt(b[1],x+4,y+17,{s:15,b:1,c:G});txt(b[2],x+4,y+22,{s:7.5,c:Mu})});
+ y+=31;
+ // yearly bars
+ txt("Net saving each year",M,y,{s:10,b:1});y+=3;
+ const yr=L.yr,hi=Math.max(...yr,0),lo=Math.min(...yr,0),span=(hi-lo)||1,CH=22,bw=(W-2*M)/20,z=y+CH*hi/span;
+ yr.forEach((v,i)=>{const h=Math.abs(v)/span*CH;fill(v>=0?G:Am);if(h>0.2)doc.rect(M+i*bw+0.5,v>=0?z-h:z,bw-1,h,"F")});
+ doc.setDrawColor(...N);doc.line(M,z,W-M,z);
+ doc.setLineDashPattern([1,1],0);doc.setDrawColor(...Mu);doc.line(M+10*bw,y,M+10*bw,y+CH);doc.setLineDashPattern([],0);
+ [1,5,10,15,20].forEach(n=>txt(String(n),M+(n-0.5)*bw,y+CH+4,{s:7,c:Mu,a:"center"}));
+ txt("Years 1-10: subscription",M,y+CH+9,{s:8,c:Mu});txt("Years 11-20: the system is yours",W-M,y+CH+9,{s:8,c:Mu,a:"right"});
+ if(L.cross>0&&L.cross<10)txt(`From year ${L.cross+1}, the yearly saving is bigger than the subscription.`,M,y+CH+14,{s:8.5});
+ y+=CH+(L.cross>0&&L.cross<10?20:15);
+ // assumptions
+ txt("How we worked it out",M,y,{s:10,b:1});
+ const as=[`Tariff: ${L.t.n}${L.pl?" ("+L.pl.n+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
+  `Solar: ${p.kwp} kWp at ${L.y.toFixed(1)} kWh per kWp a day, ${Math.round(L.d*100)}% of use in daylight, ${Math.round(L.dod*100)}% of the battery used each night. About ${K(L.used)} kWh of solar used a month. No credit for surplus solar.`,
+  `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year and ends after year 10. Panel output falls 0.5% a year.`,
+  `Backup time assumes about 500 W of essentials. Upkeep and battery replacement after year 10 are not included, and amounts are not adjusted for inflation.`];
+ y+=2;as.forEach(a=>{y=wrap("•  "+a,M,y+3.6,W-2*M,{s:8.5,c:Mu})-2});
+ doc.setFont("helvetica","normal");doc.setFontSize(7);const dl=DISC.map(p=>doc.splitTextToSize(A(p.replace("2026/27",GEN.tyear)),W-2*M)),dh=6+dl.reduce((a,l)=>a+l.length*2.95+1.2,0)+4,dt=297-dh;
+ fill(Cr);doc.rect(0,dt,W,dh,"F");txt("Disclaimer",M,dt+6,{s:8.5,b:1});let dy=dt+10;
+ dl.forEach(l=>{doc.setFont("helvetica","normal");doc.setFontSize(7);col(Mu);doc.text(l,M,dy);dy+=l.length*2.95+1.2});
+ if(y>dt-2)console.warn("PDF content overlaps disclaimer",y,dt);
+ return doc;
+}
+$("pdf").addEventListener("click",async()=>{
+ const b=$("pdf"),msg=$("pdfmsg");
+ if(REFRESH)await REFRESH();
+ if(CFG_STATE==="loading"){msg.textContent="Still loading the latest prices. Try again in a moment.";return}
+ const doc=buildPdf();if(!doc){msg.textContent="The PDF tool didn't load. Check the internet connection and reload the page.";return}
+ const fn="Versofy_proposal_"+(($("cname").value.trim()||LAST.p.n).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")||"customer")+".pdf";
+ b.disabled=true;
+ try{
+  const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
+  if(dl){await dl.save({filename:fn,data:doc.output("blob")});msg.textContent="Saved "+fn+". Send it to the customer by email or WhatsApp."}
+  else{doc.save(fn);msg.textContent="Downloaded "+fn+". Send it to the customer by email or WhatsApp."}
+ }catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"Couldn't save the PDF here. Open the calculator in a browser on a computer and try again."}
+ b.disabled=false;
+});
+
+// ---------- shared admin settings
+let REFRESH=null,GEN={...DEF_GEN},CFG_STATE="loading",DB=null,USER=null,CANEDIT=false,LIVE=null;
+const TK=["jhb","jhbc","tsh","ekh","cpt","cptd","dbn","nmb","mng","bcm","eskl","eskp","oth"];
+const parseBlocks=str=>{const parts=String(str).split(/[,;]/).map(x=>x.trim()).filter(Boolean),b=[];let last=0;
+ for(const pt of parts){const m=pt.match(/^(\*|\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)$/);if(!m)return null;const up=m[1]==="*"?1e9:+m[1],r=+m[2];if(up<=last||r<=0||r>50)return null;b.push([up,r]);last=up}
+ return b.length&&b[b.length-1][0]===1e9?b:null};
+const blocksTxt=b=>b.map(([u,r])=>(u>=1e9?"*":u)+"="+r).join(", ");
+function applyCfg(c){
+ GEN={tesc:num(c.tesc,0,25,DEF_GEN.tesc),pdate:clean(c.pdate,40)||DEF_GEN.pdate,tyear:clean(c.tyear,20)||DEF_GEN.tyear,asOf:c.at?new Date(c.at).toLocaleDateString("en-ZA",{day:"numeric",month:"long",year:"numeric"}):DEF_GEN.asOf};
+ if(Array.isArray(c.products)&&c.products.length)PK=c.products.slice(0,40).map(normP).filter(p=>p.on);
+ if(c.tariffs&&typeof c.tariffs==="object")for(const k of TK){const x=c.tariffs[k];if(!x)continue;const b=Array.isArray(x.b)?x.b.filter(v=>Array.isArray(v)&&v.length===2).map(([u,r])=>[num(u,1,1e9,1e9),num(r,0.01,50,4)]):null;
+  Object.assign(T[k],{n:clean(x.n,80)||DEF_T[k].n,fix:num(x.fix,0,1e5,DEF_T[k].fix),b:b&&b.length?b:DEF_T[k].b,flag:clean(x.flag,80)||undefined})}
+ if(Array.isArray(c.addons))ADD=c.addons.slice(0,30).map(normA);renderAdds();
+ if(!st.escTouched)$("esc").value=GEN.tesc;
+ document.querySelectorAll("#tyr,.tyr2").forEach(e=>e.textContent=GEN.tyear);
+ $("ovr").innerHTML='<option value="">Automatic (recommended)</option>'+Object.entries(T).map(([k,t])=>`<option value="${k}">${t.n}</option>`).join("");$("ovr").value=st.ovr;
+ renderTT();
+}
+function renderAdds(){const live=ADD.filter(a=>a.on&&a.fee>0);$("addf").hidden=!live.length;
+ for(const k in st.add)if(!live.some(a=>a.id===k))delete st.add[k];
+ $("adds").innerHTML=live.map(a=>`<label class="addr"><span><b>${a.n}</b>${a.type==="inv"?"Upgrade to "+a.val+" kW":a.type==="bat"?a.val+" kWh each":a.val+" panel"+(a.val>1?"s":"")+" each"} · ${R(a.fee)}/month${a.type==="inv"?"":" each"}</span>${a.type==="inv"?`<input type="checkbox" data-add="${a.id}" ${st.add[a.id]?"checked":""}>`:`<input type="number" min="0" max="${a.max}" step="1" value="${st.add[a.id]||0}" data-add="${a.id}" aria-label="How many: ${a.n}">`}</label>`).join("")}
+$("adds").addEventListener("input",e=>{const i=e.target.closest("[data-add]");if(!i)return;st.add[i.dataset.add]=i.type==="checkbox"?(i.checked?1:0):Math.max(0,+i.value||0);calc()});
+renderAdds();
+function setStatus(kind,txt){const e=$("cfgst");e.className="cfgst"+(kind==="warn"?" warn":"");e.textContent=txt}
+async function whoName(id){if(!USER||!id)return "an admin";try{const ps=await USER.profiles([id]);return ps[id].name||"an admin"}catch(e){return "an admin"}}
+$("esc").addEventListener("input",()=>{st.escTouched=true});
+const API=async(path,opt={})=>{const r=await fetch(path,{credentials:"same-origin",headers:{"Content-Type":"application/json"},...opt});if(!r.ok)throw Object.assign(new Error("http "+r.status),{status:r.status});return r.status===204?null:r.json()};
+let ME={role:null,name:""},LASTSIG=null;
+const fallback=why=>{CFG_STATE="builtin";setStatus("warn",why+" Using the built-in prices and tariffs from "+DEF_GEN.asOf+". Check them before quoting.");calc()};
+function showCfg(c){
+ if(c){LIVE=c;applyCfg(c);CFG_STATE="live";setStatus("ok","");$("cfgst").append("Prices and tariffs: ",Object.assign(document.createElement("b"),{textContent:"latest admin settings"}),", updated "+GEN.asOf+" by "+(clean(c.by,60)||"an admin")+". Prices from "+GEN.pdate+".")}
+ else{LIVE=null;CFG_STATE="builtin";setStatus("warn","No admin settings saved yet. Using the built-in prices and tariffs from "+DEF_GEN.asOf+".")}
+ calc();if(CANEDIT&&!ADIRTY)fillAdmin()}
+async function loadCfg(){try{const r=await API("/api/config");const sig=JSON.stringify(r.config);if(sig!==LASTSIG){LASTSIG=sig;showCfg(r.config)}return true}catch(e){if(CFG_STATE!=="live")fallback("Couldn't reach the server for the latest settings.");else setStatus("warn","Couldn't check for newer settings just now. Showing those from "+GEN.asOf+".");return false}}
+REFRESH=loadCfg;
+async function loadLog(){const ol=$("a_log");try{const r=await API("/api/changes");ol.textContent="";if(!r.changes.length){ol.append(Object.assign(document.createElement("li"),{textContent:"None yet."}));return}
+ for(const x of r.changes){const li=document.createElement("li");li.textContent=new Date(x.at).toLocaleString("en-ZA",{dateStyle:"medium",timeStyle:"short"})+", "+(clean(x.by,60)||"an admin")+": "+clean(x.what,300);ol.append(li)}}catch(e){}}
+function setAdmin(){CANEDIT=ME.role==="admin";$("admin").hidden=!CANEDIT;$("alogin").hidden=CANEDIT;if(CANEDIT){fillAdmin();loadLog()}}
+$("alf").addEventListener("submit",async e=>{e.preventDefault();const f=e.target,m=$("alm");m.className="amsg";m.textContent="Signing in…";
+ try{ME=await API("/api/login",{method:"POST",body:JSON.stringify({name:f.name.value.trim(),password:f.pw.value})});f.pw.value="";m.textContent="";setAdmin();$("admin").scrollIntoView({block:"start"})}
+ catch(err){m.className="amsg bad";m.textContent=err.status===429?"Too many tries. Wait a few minutes.":"That password didn't work."}});
+$("a_out").addEventListener("click",async()=>{try{await API("/api/logout",{method:"POST"})}catch(e){}ME={role:null};setAdmin()});
+(async()=>{await loadCfg();setInterval(loadCfg,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadCfg()});
+ try{ME=await API("/api/me")}catch(e){}setAdmin()})();
+// ---------- admin editor
+let ADIRTY=false;
+const H=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function prodRow(p){return `<tr><td><input type="checkbox" data-k="on" ${p.on!==false?"checked":""} aria-label="Show this package" style="min-height:24px;width:24px"></td><td><input class="w10" data-k="n" value="${H(p.n)}" maxlength="24"></td><td><input class="w7" type="number" data-k="fee" value="${H(p.fee)}" step="1"></td><td><input class="w5" type="number" data-k="esc" value="${H(p.esc)}" step="0.5"></td><td><input class="w5" type="number" data-k="pan" value="${H(p.pan)}"></td><td><input class="w5" type="number" data-k="kwp" value="${H(p.kwp)}" step="0.01"></td><td><input class="w5" type="number" data-k="inv" value="${H(p.inv)}" step="0.1"></td><td><input class="w5" type="number" data-k="bat" value="${H(p.bat)}" step="0.01"></td><td><select class="w10" data-k="sup">${Object.entries(SUPL).map(([k,v])=>`<option value="${k}" ${String(p.sup)===k?"selected":""}>${v}</option>`).join("")}</select></td><td><input class="w7" type="number" data-k="min" value="${H(p.min)}" step="100"></td><td><input class="w16" data-k="ltd" value="${H(p.ltd)}" maxlength="80"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
+function addRow(a){return `<tr data-id="${H(a.id)}"><td><input type="checkbox" data-k="on" ${a.on!==false?"checked":""} aria-label="Show this add-on" style="min-height:24px;width:24px"></td><td><input class="w10" data-k="n" value="${H(a.n)}" maxlength="40"></td><td><select class="w10" data-k="type">${Object.entries(ATYP).map(([k,v])=>`<option value="${k}" ${a.type===k?"selected":""}>${v[0]}</option>`).join("")}</select></td><td><input class="w5" type="number" data-k="val" value="${H(a.val)}" step="0.01"></td><td><input class="w7" type="number" data-k="fee" value="${H(a.fee)}" step="1"></td><td><input class="w5" type="number" data-k="max" value="${H(a.max)}" step="1"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
+function fillAdmin(src){
+ const c=src||LIVE||{};const prods=(Array.isArray(c.products)&&c.products.length?c.products:DEF_PK).map(normP);
+ $("a_tesc").value=num(c.tesc,0,25,DEF_GEN.tesc);$("a_pdate").value=clean(c.pdate,40)||DEF_GEN.pdate;$("a_tyear").value=clean(c.tyear,20)||DEF_GEN.tyear;
+ $("aprod").tBodies[0].innerHTML=prods.map(prodRow).join("");
+ $("aadd").tBodies[0].innerHTML=(Array.isArray(c.addons)?c.addons:DEF_ADD).map(normA).map(addRow).join("");
+ const base=src&&src.tariffs?src.tariffs:(c.tariffs||{});
+ $("atar").tBodies[0].innerHTML=TK.map(k=>{const t=base[k]||{},d=DEF_T[k],b=Array.isArray(t.b)&&t.b.length?t.b:(src?d.b:T[k].b);return `<tr data-t="${k}"><td>${H(d.s)}</td><td><input class="w16" data-k="n" value="${H(t.n||(src?d.n:T[k].n))}" maxlength="80"></td><td><input class="w7" type="number" data-k="fix" value="${H(t.fix??(src?d.fix:T[k].fix))}" step="0.01"></td><td><input class="w16" data-k="b" value="${H(blocksTxt(b))}"></td><td><input class="w16" data-k="flag" value="${H(t.flag||(src?d.flag||"":T[k].flag||""))}" maxlength="80"></td></tr>`}).join("");
+ const a=$("alast");a.textContent=LIVE&&LIVE.at?"Last saved "+new Date(LIVE.at).toLocaleString("en-ZA",{dateStyle:"medium",timeStyle:"short"})+".":"Nothing saved yet: the calculator is using its built-in values.";
+ ADIRTY=!!src;$("a_msg").textContent=src?"Built-in values loaded. Save to apply them for everyone.":"";$("a_msg").className="amsg";
+}
+function readAdmin(){
+ const errs=[],products=[...$("aprod").tBodies[0].rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-k="${k}"]`);const p={on:g("on").checked,n:g("n").value.trim().toUpperCase(),fee:+g("fee").value,esc:+g("esc").value,pan:+g("pan").value,kwp:+g("kwp").value,inv:+g("inv").value,bat:+g("bat").value,sup:g("sup").value,min:+g("min").value||0,ltd:g("ltd").value.trim()};
+  if(!/^[A-Z0-9 +\-]{1,24}$/.test(p.n))errs.push(`Package ${i+1}: name must be letters, numbers, spaces, + or -.`);
+  if(!(p.fee>0))errs.push(`${p.n||"Package "+(i+1)}: fee must be above R0.`);
+  if(!(p.esc>=0&&p.esc<=30))errs.push(`${p.n}: yearly increase must be 0 to 30%.`);
+  if(!(p.kwp>0&&p.pan>0&&p.inv>0&&p.bat>=0))errs.push(`${p.n}: panels, kWp and inverter must be above 0.`);
+  return p});
+ const names=products.map(p=>p.n);if(new Set(names).size!==names.length)errs.push("Two packages have the same name.");
+ if(!products.some(p=>p.on))errs.push("Show at least one package.");
+ const tariffs={};for(const tr of $("atar").tBodies[0].rows){const k=tr.dataset.t,g=x=>tr.querySelector(`[data-k="${x}"]`),b=parseBlocks(g("b").value),fix=+g("fix").value;
+  if(!b)errs.push(`${DEF_T[k].n}: energy rates aren't in the "350=3.34, *=4.44" form, ending with *.`);
+  if(!(fix>=0))errs.push(`${DEF_T[k].n}: fixed charge must be R0 or more.`);
+  tariffs[k]={n:g("n").value.trim()||DEF_T[k].n,fix,b:b||[],flag:g("flag").value.trim()}}
+ const addons=[...$("aadd").tBodies[0].rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-k="${k}"]`);const a={id:tr.dataset.id,on:g("on").checked,n:g("n").value.trim(),type:g("type").value,val:+g("val").value,fee:+g("fee").value,max:+g("max").value||1};
+  if(!a.n)errs.push(`Add-on ${i+1}: give it a name.`);if(!(a.val>0))errs.push(`${a.n||"Add-on "+(i+1)}: size must be above 0.`);if(!(a.fee>=0))errs.push(`${a.n}: fee can't be negative.`);return a});
+ const tesc=+$("a_tesc").value;if(!(tesc>=0&&tesc<=25))errs.push("Default tariff increase must be 0 to 25%.");
+ return {errs,cfg:{products,addons,tariffs,tesc,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
+}
+function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)||DEF_PK).map(p=>[p.n,p])),pb=Object.fromEntries(b.products.map(p=>[p.n,p]));
+ for(const n in pb){const x=pa[n],y=pb[n];if(!x){out.push("added "+n);continue}for(const[k,l]of[["fee","fee"],["esc","increase"],["kwp","kWp"],["bat","battery"],["inv","inverter"],["pan","panels"],["on","shown"],["sup","supply"],["min","guide"],["ltd","note"]])if(String(x[k]??"")!==String(y[k]??""))out.push(`${n} ${l} ${x[k]??""} → ${y[k]}`)}
+ for(const n in pa)if(!pb[n])out.push("removed "+n);
+ const ta=(a&&a.tariffs)||{};for(const k in b.tariffs){const x=ta[k]||DEF_T[k],y=b.tariffs[k];if(JSON.stringify([x.n,+x.fix,x.b])!==JSON.stringify([y.n,+y.fix,y.b]))out.push("tariff "+y.n)}
+ const aa=Object.fromEntries(((a&&a.addons)||DEF_ADD).map(x=>[x.id,x]));for(const y of b.addons){const x=aa[y.id];if(!x)out.push("added add-on "+y.n);else if(JSON.stringify([x.n,x.type,+x.val,+x.fee,+x.max,x.on!==false])!==JSON.stringify([y.n,y.type,y.val,y.fee,y.max,y.on]))out.push(`add-on ${y.n}: fee ${x.fee} → ${y.fee}`)}
+ for(const id in aa)if(!b.addons.some(y=>y.id===id))out.push("removed add-on "+aa[id].n);
+ if(String((a&&a.tesc)??DEF_GEN.tesc)!==String(b.tesc))out.push("default tariff increase → "+b.tesc+"%");
+ return out.join("; ")||"saved with no changes"}
+$("admin").addEventListener("input",()=>{ADIRTY=true;$("a_msg").textContent="Unsaved changes.";$("a_msg").className="amsg"});
+$("admin").addEventListener("click",e=>{if(e.target.matches("[data-del]")){e.target.closest("tr").remove();ADIRTY=true;$("a_msg").textContent="Unsaved changes."}});
+$("a_add").addEventListener("click",()=>{$("aprod").tBodies[0].insertAdjacentHTML("beforeend",prodRow({n:"NEW",fee:0,esc:7,pan:0,kwp:0,inv:0,bat:0,sup:"1",min:0,ltd:"",on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
+$("a_addon").addEventListener("click",()=>{$("aadd").tBodies[0].insertAdjacentHTML("beforeend",addRow({id:"a"+Date.now().toString(36),n:"",type:"bat",val:5,fee:0,max:1,on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
+$("a_undo").addEventListener("click",()=>fillAdmin());
+$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,tariffs:t,tesc:DEF_GEN.tesc,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
+$("a_save").addEventListener("click",async()=>{
+ const m=$("a_msg"),{errs,cfg}=readAdmin();if(errs.length){m.className="amsg bad";m.textContent=errs.slice(0,3).join(" ");return}
+ const b=$("a_save");b.disabled=true;m.className="amsg";m.textContent="Saving…";
+ try{const what=diffTxt(LIVE,cfg);await API("/api/config",{method:"PUT",body:JSON.stringify({config:cfg,what:what.slice(0,1000)})});ADIRTY=false;
+  await loadCfg();loadLog();m.className="amsg ok";m.textContent="Saved. Every quote now uses these values.";
+ }catch(e){m.className="amsg bad";m.textContent=e.status===401?"Your sign-in has expired. Sign in again.":"Couldn't save. Check the connection and try again."}
+ b.disabled=false});
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9 ]/g,"");
+let hits=[],hi=0;
+function suggest(){
+ const q=norm($("loc").value.trim());if(!q){$("sugg").hidden=true;return}
+ hits=PL.filter(p=>norm(p.n).includes(q)).sort((a,b)=>norm(a.n).indexOf(q)-norm(b.n).indexOf(q)).slice(0,7);hi=0;
+ const box=$("sugg");box.textContent="";
+ const list=hits.length?hits:[{n:"Use “"+$("loc").value.trim()+"” (other municipality)",m:"oth",p:"GP",other:1}];
+ list.forEach((p,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("role","option");if(i===0)b.className="on";const a=document.createElement("b");a.style.fontWeight="500";a.textContent=p.n;const s=document.createElement("span");s.textContent=p.other?"typical municipal tariff":T[p.m].s+", "+p.p;b.append(a,s);b.addEventListener("click",()=>{if(p.other){st.place={n:$("loc").value.trim(),m:"oth",p:"GP",e:false};setPlace(st.place)}else setPlace(p)});box.append(b)});
+ box.hidden=false;
+}
+$("loc").addEventListener("input",suggest);
+$("loc").addEventListener("focus",e=>e.target.select());
+$("loc").addEventListener("keydown",e=>{const bs=[...$("sugg").children];if($("sugg").hidden||!bs.length)return;if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();hi=(hi+(e.key==="ArrowDown"?1:bs.length-1))%bs.length;bs.forEach((b,i)=>b.className=i===hi?"on":"")}if(e.key==="Enter"){e.preventDefault();bs[hi].click()}if(e.key==="Escape")$("sugg").hidden=true});
+$("who").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.who=b.dataset.w;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
+$("ph").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.ph=+b.dataset.p;st.sel=null;calc()}});
+$("ovr").addEventListener("change",e=>{st.ovr=e.target.value;calc()});
+$("rec").addEventListener("click",e=>{if(e.target.id==="back"){st.sel=null;calc()}});
+$("tbl").addEventListener("click",e=>{const tr=e.target.closest("tr[data-n]");if(tr){st.sel=tr.dataset.n;calc();$("rec").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"})}});
+$("tbl").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-n]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();st.sel=tr.dataset.n;calc()}});
+$("f").addEventListener("input",e=>{if(!["loc","ovr"].includes(e.target.id))calc()});
+$("bill").addEventListener("input",()=>{st.sel=null});
+$("f").addEventListener("submit",e=>e.preventDefault());
+document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
+$("reset").addEventListener("click",()=>{$("cname").value="";$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
+try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}st.who=s.who||"muni"}}catch(e){}
+calc();
+}
+</script>
+</body>
+</html>
