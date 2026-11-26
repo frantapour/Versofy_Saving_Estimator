@@ -84,6 +84,8 @@ const body = req => new Promise((ok, bad) => {
   req.on("end", () => { try { ok(JSON.parse(Buffer.concat(chunks).toString() || "{}")); } catch (e) { bad(e); } });
 });
 const isSecure = req => req.headers["x-forwarded-proto"] === "https";
+// ignore spaces, quotes and backticks picked up when a password is copied and pasted
+const tidy = v => String(v ?? "").trim().replace(/^[`'"]+|[`'"]+$/g, "").trim();
 const clean = (v, n) => String(v ?? "").replace(/[<>&"'`]/g, "").slice(0, n);
 
 function validConfig(c) {
@@ -94,9 +96,23 @@ function validConfig(c) {
   return c.products.every(p => p && typeof p.n === "string" && +p.fee > 0 && +p.kwp > 0);
 }
 
-const LOGIN_PAGE = msg => `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Versofy calculator sign-in</title>
-<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#193f2e;font:16px/1.5 system-ui,sans-serif;color:#121442}form{background:#f1e9df;padding:28px;border-radius:12px;display:grid;gap:12px;width:min(360px,90vw)}h1{margin:0;font-size:24px}input,button{font:inherit;min-height:46px;border-radius:8px;border:1px solid #dccfbf;padding:0 12px}button{background:#fdbd14;border:0;font-weight:700;border-radius:999px;cursor:pointer}p{margin:0;color:#c2413a}</style></head>
-<body><form method="post" action="/login"><h1>Versofy savings calculator</h1><label>Team password<br><input type="password" name="password" required autofocus style="width:100%"></label><button>Open the calculator</button>${msg ? `<p>${msg}</p>` : ""}</form></body></html>`;
+const LOGIN_PAGE = msg => `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Versofy savings calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#193f2e radial-gradient(ellipse at 80% -10%,#2b5c47 0,transparent 60%);font:16px/1.5 "Open Sans",system-ui,sans-serif;color:#121442}
+.card{width:min(400px,100%);background:#f1e9df;border-radius:16px;padding:32px 28px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.sun{width:44px;height:44px;border-radius:50%;background:#fdbd14;box-shadow:0 0 0 8px rgba(253,189,20,.25);margin-bottom:18px}
+h1{font:800 28px/1.1 Fraunces,Georgia,serif;margin:0 0 6px}p.sub{margin:0 0 22px;color:#4d5a52;font-size:15px}
+label{display:block;font-weight:600;font-size:15px;margin-bottom:6px}
+.pw{position:relative}.pw input{width:100%;min-height:48px;border:1px solid #dccfbf;border-radius:10px;padding:0 64px 0 14px;font:16px "Open Sans",sans-serif;background:#fff;color:#121442}
+.pw button{position:absolute;right:6px;top:6px;bottom:6px;border:0;background:none;color:#193f2e;font:600 14px "Open Sans",sans-serif;cursor:pointer;padding:0 10px;border-radius:8px}
+input:focus-visible,button:focus-visible{outline:3px solid #faa21b;outline-offset:2px}
+.go{width:100%;min-height:48px;margin-top:16px;border:0;border-radius:999px;background:#fdbd14;color:#121442;font:700 16px "Open Sans",sans-serif;cursor:pointer}.go:hover{background:#faa21b}
+.err{margin:14px 0 0;color:#c2413a;font-weight:600;font-size:15px}.foot{margin:18px 0 0;font-size:13px;color:#4d5a52}
+</style></head>
+<body><form class="card" method="post" action="/login"><div class="sun" aria-hidden="true"></div><h1>Versofy savings calculator</h1><p class="sub">For the Versofy sales team. Enter the team password to start a quote.</p>
+<label for="pw">Team password</label><div class="pw"><input id="pw" type="password" name="password" required autofocus autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="current-password"><button type="button" onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button></div>
+<button class="go">Open the calculator</button>${msg ? `<p class="err" role="alert">${msg}</p>` : ""}<p class="foot">Don't have the password? Ask your sales manager.</p></form></body></html>`;
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -111,9 +127,11 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/login" && req.method === "POST") {
       if (limited(ip)) return send(res, 429, LOGIN_PAGE("Too many tries. Wait a few minutes."));
       let raw = ""; for await (const c of req) { raw += c; if (raw.length > 2000) break; }
-      const pw = new URLSearchParams(raw).get("password") || "";
-      if (SALES_PASSWORD && same(pw, SALES_PASSWORD)) return send(res, 303, "", { Location: "/", "Set-Cookie": makeCookie({ role: "sales", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) });
-      return send(res, 401, LOGIN_PAGE("That password didn't work."));
+      const pw = tidy(new URLSearchParams(raw).get("password"));
+      const role = SALES_PASSWORD && same(pw, tidy(SALES_PASSWORD)) ? "sales" : ADMIN_PASSWORD && same(pw, tidy(ADMIN_PASSWORD)) ? "admin" : null;
+      if (role) return send(res, 303, "", { Location: "/", "Set-Cookie": makeCookie({ role, name: role === "admin" ? "Admin" : "", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) });
+      console.warn(`Team sign-in failed (typed ${pw.length} characters, expected ${tidy(SALES_PASSWORD).length})`);
+      return send(res, 401, LOGIN_PAGE("That password didn't work. Passwords are case-sensitive."));
     }
     if (!SALES_PASSWORD) return send(res, 503, url.pathname.startsWith("/api/") ? { error: "not configured" } : "<!DOCTYPE html><title>Not set up</title><p style='font:16px system-ui;padding:40px'>The calculator is locked until the SALES_PASSWORD variable is set in Railway.</p>");
     if (!salesOk) {
@@ -135,7 +153,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/api/login" && req.method === "POST") {
       if (limited(ip)) return send(res, 429, { error: "too many tries" });
       const b = await body(req);
-      if (!ADMIN_PASSWORD || !same(b.password || "", ADMIN_PASSWORD)) return send(res, 401, { error: "wrong password" });
+      if (!ADMIN_PASSWORD || !same(tidy(b.password), tidy(ADMIN_PASSWORD))) return send(res, 401, { error: "wrong password" });
       const s = { role: "admin", name: clean(b.name, 60) || "Admin", exp: Date.now() + SESSION_HOURS * 3600e3 };
       return send(res, 200, { role: s.role, name: s.name }, { "Set-Cookie": makeCookie(s, isSecure(req)) });
     }
