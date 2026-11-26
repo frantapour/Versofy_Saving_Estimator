@@ -1,0 +1,53 @@
+municipality,applies_to,tariff_name,fixed_per_month,rates,warning,source
+Msunduzi,prepaid,Msunduzi domestic 60 A prepaid,0.00,*=4.1545,,https://www.nersa.org.za/files/files/2026/07/MsunduziRFD2026-27.pdf
+Msunduzi,monthly,Msunduzi domestic single phase (credit),1652.78,*=2.6059,Fixed charge assumes a 60 A supply,https://www.nersa.org.za/files/files/2026/07/MsunduziRFD2026-27.pdf
+Emfuleni,both,"Emfuleni domestic (seasonal, averaged)",524.24,50=2.6974; 350=3.121; 600=4.1709; *=5.0137,Summer and winter rates averaged,https://emfuleni.gov.za/wp-content/uploads/2026/08/Final-Tariff-Booklet-2026-27.pdf
+Mogale City,prepaid,Mogale City domestic standard (prepaid),0.00,*=3.1466,,https://mogalecity.gov.za/wp-content/uploads/Pdfs/Council%20Page/Key%20Documents/Tariffs/2026-2027/Approved%20Electricity%20Tariffs.pdf
+Mogale City,monthly,Mogale City domestic standard (credit),519.00,*=3.1466,,https://mogalecity.gov.za/wp-content/uploads/Pdfs/Council%20Page/Key%20Documents/Tariffs/2026-2027/Approved%20Electricity%20Tariffs.pdf
+Rustenburg,prepaid,Rustenburg residential prepaid (town),560.19,50=2.5472; 350=3.025; 600=3.8316; *=4.6544,,https://www.nersa.org.za/files/files/2026/08/RustenburgLocalMunicipalityReasonsforDecisionontariffapplicationprocessforFY2026-27.pdf
+Rustenburg,monthly,Rustenburg residential conventional (town),762.51,50=2.3427; 350=2.9569; 600=3.8996; *=4.7372,,https://www.nersa.org.za/files/files/2026/08/RustenburgLocalMunicipalityReasonsforDecisionontariffapplicationprocessforFY2026-27.pdf
+Polokwane,both,Polokwane single phase domestic,236.27,50=2.2926; 350=2.9929; 600=4.4589; *=5.2428,,https://www.nersa.org.za/files/files/2026/06/Polokwane_RFDontariffapplicationprocessforFY2026-27.pdf
+Mbombela,both,Mbombela domestic,0.00,50=2.5149; 100=3.3069; 600=4.5362; *=5.2133,,https://www.mbombela.gov.za/wp-content/uploads/2026/06/Elecricity-2026-2027.pdf
+City of Matlosana,both,Matlosana domestic,315.24,50=2.4456; 350=3.1265; 600=4.2042; 1500=4.8291; *=5.0844,,https://www.nersa.org.za/files/files/2026/07/CityOfMatlosanaReasonsforDecisionontariffapplicationprocessforFY2026-27FY.pdf
+Sol Plaatje,both,Sol Plaatje domestic over 20 A,311.40,350=3.18; *=3.6,Fixed charge assumes a 60 A supply,https://www.nersa.org.za/files/files/2026/08/SolPlaatjeReasonsforDecisionforthe2026_27_FINAL.pdf
+Steve Tshwete,both,Steve Tshwete residential single phase,173.68,50=2.5124; 350=3.3853; 600=4.4275; *=4.9885,,https://stlm.gov.za/wp-content/uploads/2026/06/Schedule-1-Final-Tariffs-2026-2027.pdf
+Emalahleni (Mpumalanga),prepaid,eMalahleni normal domestic prepaid,115.00,*=4.2129,,https://www.nersa.org.za/files/files/2026/07/EmalahleniMunicipalityReasonsforDecisiononTariffsApplicationprocessfortheyearFY2026-27.pdf
+Emalahleni (Mpumalanga),monthly,eMalahleni normal domestic (credit),642.94,50=2.5144; 350=3.2323; 600=4.4993; 1000=4.5788; *=4.6216,Fixed charge applies above 600 kWh,https://www.nersa.org.za/files/files/2026/07/EmalahleniMunicipalityReasonsforDecisiononTariffsApplicationprocessfortheyearFY2026-27.pdf
+Govan Mbeki,both,Govan Mbeki domestic,411.61,50=2.4996; 350=3.2139; 600=4.3603; *=5.2334,,https://www.govanmbeki.gov.za/wp-content/tariff/electricity_tariffs_2026_2027.pdf
+Madibeng,both,Madibeng domestic prepaid,0.00,*=4.0675,Prepaid rate; monthly-account scale unclear,https://www.nersa.org.za/files/files/2026/08/MadibengMunicipalityReasonsforDecisionontariffapplicationprocessforFY2026-27FY.pdf
+Stellenbosch,prepaid,Stellenbosch domestic prepaid (over 600 kWh),330.84,50=2.3764; 350=3.0483; 600=4.3003; *=5.064,Homes under 600 kWh pay no fixed charge,https://www.nersa.org.za/file/9226/StellenboschMunicipality.pdf
+Stellenbosch,monthly,Stellenbosch domestic regular (credit),408.11,50=2.3764; 350=3.0483; 600=4.3003; *=5.064,,https://www.nersa.org.za/file/9226/StellenboschMunicipality.pdf
+Drakenstein,both,Drakenstein domestic 40 to 90 A,837.00,*=3.49,Fixed charge assumes a 60 A supply,https://www.nersa.org.za/file/9153/DrakensteinMunicipality-ReasonsforDecisiononTariffApplicationFY2026-27updated.pdf
+George,both,George domestic from 20 A,614.72,*=3.7131,Fixed charge assumes a 60 A supply,https://www.george.gov.za/wp-content/uploads/2026/06/GM-Tariff-Listing-2026-27.pdf
+Newcastle,both,"Newcastle scale 2, 60 A domestic",514.71,50=2.4523; 350=3.1488; 600=3.5284; *=3.6401,,https://www.nersa.org.za/files/files/2026/07/NewcastleRFD2026-27.pdf
+Matjhabeng,prepaid,"Matjhabeng domestic prepaid (seasonal, averaged)",0.00,*=4.34,Summer and winter rates averaged,https://www.nersa.org.za/files/files/2026/07/MatjhabengLM2026_27RFD.pdf
+Matjhabeng,monthly,"Matjhabeng IBT domestic (seasonal, averaged)",215.62,350=4.3025; *=4.55,Summer and winter rates averaged,https://www.nersa.org.za/files/files/2026/07/MatjhabengLM2026_27RFD.pdf
+Midvaal,both,Midvaal private residences,0.00,50=2.5055; 350=3.2212; 600=4.4174; *=5.1398,,https://www.midvaal.gov.za/wp-content/uploads/2026/06/2-Electricity-Tariffs.pdf
+Rand West City,prepaid,Rand West domestic prepaid (non-indigent),155.03,50=2.4124; 350=3.1035; 600=4.3499; *=5.0747,,https://www.nersa.org.za/files/files/2026/07/RandwestCityLocalMunicipality_ReasonsforDecisionontariffapplicationprocessforFY2026-27FY.pdf
+Rand West City,monthly,Rand West domestic conventional (non-indigent),155.17,50=2.4145; 350=3.1173; 600=4.3691; *=5.1456,,https://www.nersa.org.za/files/files/2026/07/RandwestCityLocalMunicipality_ReasonsforDecisionontariffapplicationprocessforFY2026-27FY.pdf
+Merafong City,both,Merafong domestic conventional,201.25,50=2.4187; 350=3.0964; 600=4.358; *=5.0268,Prepaid scale not listed; credit rates used,https://www.nersa.org.za/files/files/2026/07/Merafong_ReasonsforDecisionontariffapplicationprocessforFY2026-27.pdf
+JB Marks,prepaid,JB Marks domestic prepaid,72.13,50=2.4112; 350=3.0835; 600=4.3532; *=5.4056,,https://www.nersa.org.za/files/files/2026/07/JBMarksLocalMunicipality_ReasonsforDecisionontariffapplicationprocessforFY2026-27FY.pdf
+JB Marks,monthly,JB Marks domestic conventional,160.02,50=2.4112; 350=3.0835; 600=4.3532; *=5.4056,,https://www.nersa.org.za/files/files/2026/07/JBMarksLocalMunicipality_ReasonsforDecisionontariffapplicationprocessforFY2026-27FY.pdf
+Mossel Bay,both,Mossel Bay domestic single phase 2-part,538.80,*=3.3551,Fixed charge assumes a 60 A supply,https://www.mosselbay.gov.za/storage/documents/dcc5e4950d9a8f03633a5aa5c1f643ed.pdf
+Overstrand,prepaid,Overstrand domestic 2-part prepaid 60 A,937.64,350=2.8819; 600=3.2232; *=3.483,Fixed charge assumes a 60 A supply,https://www.nersa.org.za/file/9188/OverstrandMunicipality-ReasonsforDecisionontariffFY2026-27.pdf
+Overstrand,monthly,Overstrand domestic 2-part credit 60 A,937.64,350=2.9385; 600=3.2859; *=3.5349,Fixed charge assumes a 60 A supply,https://www.nersa.org.za/file/9188/OverstrandMunicipality-ReasonsforDecisionontariffFY2026-27.pdf
+KwaDukuza,prepaid,KwaDukuza domestic low prepaid,0.00,*=3.8432,,https://www.nersa.org.za/files/files/2026/07/KwadukuzaRFD2026-27.pdf
+KwaDukuza,monthly,KwaDukuza domestic T4 (credit),70.95,*=4.0575,,https://www.nersa.org.za/files/files/2026/07/KwadukuzaRFD2026-27.pdf
+Ray Nkonyeni,prepaid,Ray Nkonyeni domestic prepaid,0.00,50=3.2233; 350=4.1388; 600=5.633; *=6.7259,,https://www.nersa.org.za/files/files/2026/07/RayNkonyeniRFD2026-27.pdf
+Ray Nkonyeni,monthly,Ray Nkonyeni domestic conventional,561.54,50=2.5078; 350=3.22; 600=4.3826; *=5.2326,,https://www.nersa.org.za/files/files/2026/07/RayNkonyeniRFD2026-27.pdf
+Saldanha Bay,both,Saldanha Bay domestic high over 30 A,718.36,350=2.8983; *=4.0335,Fixed charge assumes a 60 A supply,https://sbm.gov.za/wp-content/uploads/Pages/Financial_Documents/Budget/Budget_2026_2027/Original_Budget_2026_2027/2026-27-Rates-and-tariffs-updated.pdf
+Swartland,prepaid,Swartland prepaid households (non-indigent),0.00,350=4.7588; *=5.1819,,https://www.nersa.org.za/file/9191/SwartlandMunicipality-ReasonsforDecisionontariffFY2026-27.pdf
+Swartland,monthly,"Swartland households (non-indigent, credit)",502.91,50=2.5366; 350=3.2615; 600=4.59; *=5.4055,,https://www.nersa.org.za/file/9191/SwartlandMunicipality-ReasonsforDecisionontariffFY2026-27.pdf
+Metsimaholo,prepaid,"Metsimaholo domestic prepaid (seasonal, averaged)",57.57,50=2.4125; 350=3.18; 600=4.555; *=5.22,Summer and winter rates averaged,https://www.nersa.org.za/files/files/2026/07/MetsimaholoLMRFD2026-27.pdf
+Metsimaholo,monthly,"Metsimaholo domestic conventional (seasonal, averaged)",151.98,50=2.4125; 350=3.18; 600=4.555; *=5.225,Summer and winter rates averaged,https://www.nersa.org.za/files/files/2026/07/MetsimaholoLMRFD2026-27.pdf
+Kouga,prepaid,Kouga domestic prepaid high 60 A,419.08,50=2.2934; 350=2.9946; 600=4.2725; *=5.141,,https://www.nersa.org.za/files/files/2026/07/KougaMunicipality-ReasonsforDecisionontariffApplicationFY2026-27.pdf
+Kouga,monthly,Kouga domestic conventional high 60 A,523.84,50=2.2934; 350=2.9946; 600=4.2725; *=5.141,,https://www.nersa.org.za/files/files/2026/07/KougaMunicipality-ReasonsforDecisionontariffApplicationFY2026-27.pdf
+Breede Valley,both,Breede Valley residential,0.00,50=2.507; 350=3.22; 600=4.531; *=5.336,,https://www.nersa.org.za/file/9152/BreedeValleyMunicipality-ReasonsforDecisiononTariffApplicationforFY2026-27updated.pdf
+uMhlathuze,prepaid,uMhlathuze domestic prepaid (incl. levy),0.00,50=1.9095; 350=2.4222; 600=3.4774; 1500=3.6384; *=4.1484,,https://gridpulse.org.za/tariffs/umhlathuze
+uMhlathuze,monthly,uMhlathuze domestic conventional (incl. levy),400.99,50=1.9095; 350=2.4222; 600=3.4774; 1500=3.6384; *=4.1484,,https://gridpulse.org.za/tariffs/umhlathuze
+Greater Tzaneen,prepaid,Greater Tzaneen domestic prepaid,127.30,*=3.312,,https://gridpulse.org.za/tariffs/greater-tzaneen
+Greater Tzaneen,monthly,Greater Tzaneen domestic conventional,849.32,1500=4.2421; *=4.3694,,https://gridpulse.org.za/tariffs/greater-tzaneen
+Matzikama,prepaid,Matzikama domestic prepaid,563.56,*=3.3554,Fixed charge assumes a 60 A supply,https://gridpulse.org.za/tariffs/matzikama
+Matzikama,monthly,Matzikama domestic credit single phase,594.87,*=3.3554,Fixed charge assumes a 60 A supply,https://gridpulse.org.za/tariffs/matzikama
+uPhongolo,both,uPhongolo domestic conventional,815.84,*=3.427,Prepaid scale not listed; credit rates used,https://gridpulse.org.za/tariffs/uphongolo
+Mantsopa,both,"Mantsopa domestic (seasonal, averaged)",0.00,350=3.1176; 600=4.3869; *=5.1083,Summer and winter rates averaged,https://gridpulse.org.za/tariffs/mantsopa
