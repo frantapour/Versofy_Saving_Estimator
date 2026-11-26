@@ -213,13 +213,18 @@ a{color:inherit}
 <h3>Tariffs</h3>
 <p class="sp" style="margin:0 0 8px">Energy rates per kWh incl. VAT, as price blocks: "350=3.34, 500=3.83, *=4.44" means up to 350 kWh at R3.34, 351 to 500 at R3.83, and the rest at R4.44. One flat rate is "*=4.11".</p>
 <div class="scroll"><table id="atar"><thead><tr><th>Supplier</th><th>Tariff name</th><th>Fixed R / month</th><th>Energy rates</th><th>Warning shown to sales (optional)</th></tr></thead><tbody></tbody></table></div>
+<h3>Municipal tariffs</h3>
+<p class="sp" style="margin:0 0 8px">Load the tariff for any of the 205 local municipalities. Without one, homes there use the "Typical municipal home" estimate above. Same rate format as above.</p>
+<div class="scroll"><table id="amt"><thead><tr><th>Municipality</th><th>Tariff name</th><th>Fixed R / month</th><th>Energy rates</th><th>Warning shown to sales (optional)</th><th></th></tr></thead><tbody></tbody></table></div>
+<datalist id="mlist"></datalist>
+<div class="arow"><button type="button" class="abtn sm" id="a_mt">Add a municipal tariff</button></div>
 <div class="arow"><button type="button" class="abtn pri" id="a_save">Save for everyone</button><button type="button" class="abtn" id="a_undo">Discard changes</button><button type="button" class="abtn" id="a_def">Load built-in values</button><span class="amsg" id="a_msg" aria-live="polite"></span></div>
 <h3 style="margin-top:18px">Recent changes</h3><ol class="ylog" id="a_log"><li>None yet.</li></ol>
 </div></section>
 
 <section class="band" style="background:light-dark(#c0ebbd,#193f2e);border-top:0"><div class="wrap">
 <h2>Which tariff the calculator picks</h2>
-<p class="lede" style="margin-bottom:12px">One tariff per supplier: the one a standalone, non-indigent home is most likely on, <span id="tyr">2026/27</span>, incl. VAT. Across suppliers a unit costs roughly R3.30 to R5.10.</p>
+<p class="lede" style="margin-bottom:12px">One tariff per supplier: the one a standalone, non-indigent home is most likely on, <span id="tyr">2026/27</span>, incl. VAT. Across suppliers a unit costs roughly R3.30 to R5.10. All 205 local municipalities can be searched; until an admin loads a municipality's own tariff, it uses the typical municipal estimate.</p>
 <div class="scroll"><table class="tt" id="tt"><thead><tr><th>Supplier</th><th>Tariff used, and why</th><th>Energy rate per kWh</th><th class="n">Fixed / month</th></tr></thead><tbody></tbody></table></div>
 <div class="notes" style="margin-top:28px">
  <div><h3>How the saving is worked out</h3><p>Monthly kWh is backed out of the spend through the tariff's price blocks. Solar covers daytime use directly; leftover solar charges the battery, which covers evening use up to its usable size. Surplus is not credited (no feed-in). The grid bill is re-priced on what is left, then the Versofy fee is added. The recommendation is the package with the best net monthly saving (grid bill reduction minus the Versofy fee) of all packages that suit the home's supply.</p><p style="margin-top:8px">Long term: the grid saving rises with the yearly tariff increase, less 0.5% a year for panel ageing; the fee rises with the subscription increase. Years 1 to 10 are saving minus fee. From year 11 the subscription ends and the customer keeps the system, so the whole grid saving counts.</p></div>
@@ -307,6 +312,12 @@ const RAW={
  "oth|EC":"Makhanda (Grahamstown);Jeffreys Bay;Port Alfred;Mthatha|p"
 };
 const PL=[];for(const k in RAW){const[m,p]=k.split("|");for(const x of RAW[k].split(";")){const[n,f]=x.split("|");PL.push({n,m,p,e:f==="p"})}}
+// all 205 local municipalities: name|province|main town (metros are covered by the suburb lists above)
+const MUNIS="Abaqulusi|KZN|Vryheid;Albert Luthuli|MP|Carolina;Alfred Duma|KZN|Ladysmith;Amahlathi|EC|Stutterheim;Ba-Phalaborwa|LP|Phalaborwa;Beaufort West|WC|Beaufort West;Bela-Bela|LP|Bela-Bela;Bergrivier|WC|Piketberg;Big Five Hlabisa|KZN|Hlabisa;Bitou|WC|Plettenberg Bay;Blouberg|LP|Senwabarwana;Blue Crane Route|EC|Somerset East;Breede Valley|WC|Worcester;Bushbuckridge|MP|Bushbuckridge;Cape Agulhas|WC|Bredasdorp;Cederberg|WC|Clanwilliam;City of Matlosana|NW|Klerksdorp;Collins Chabane|LP|Malamulele;Dannhauser|KZN|Dannhauser;Dawid Kruiper|NC|Upington;Dihlabeng|FS|Bethlehem;Dikgatlong|NC|Barkly West;Dipaleseng|MP|Balfour;Ditsobotla|NW|Lichtenburg;Dr AB Xuma|EC|Ngcobo;Dr Beyers Naudé|EC|Graaff-Reinet;Dr JS Moroka|MP|Siyabuswa;Dr Nkosazana Dlamini Zuma|KZN|Creighton;Drakenstein|WC|Paarl;eDumbe|KZN|Paulpietersburg;Elias Motsoaledi|LP|Groblersdal;Elundini|EC|Maclear;eMadlangeni|KZN|Utrecht;Emakhazeni|MP|Belfast;Emalahleni (Eastern Cape)|EC|Lady Frere;Emalahleni (Mpumalanga)|MP|eMalahleni (Witbank);Emfuleni|GP|Vanderbijlpark;Emthanjeni|NC|De Aar;Endumeni|KZN|Dundee;Enoch Mgijima|EC|Komani (Queenstown);Ephraim Mogale|LP|Marble Hall;Fetakgomo Tubatse|LP|Burgersfort;Ga-Segonyana|NC|Kuruman;Gamagara|NC|Kathu;George|WC|George;Govan Mbeki|MP|Secunda;Great Kei|EC|Komga;Greater Giyani|LP|Giyani;Greater Kokstad|KZN|Kokstad;Greater Letaba|LP|Modjadjiskloof;Greater Taung|NW|Taung;Greater Tzaneen|LP|Tzaneen;Hantam|NC|Calvinia;Hessequa|WC|Riversdale;Impendle|KZN|Impendle;Ingquza Hill|EC|Flagstaff;Inkosi Langalibalele|KZN|Estcourt;Intsika Yethu|EC|Cofimvaba;Inxuba Yethemba|EC|Cradock;JB Marks|NW|Potchefstroom;Joe Morolong|NC|Mothibistad;Johannes Phumani Phungula|KZN|Ixopo;Jozini|KZN|Jozini;Kagisano-Molopo|NW|Ganyesa;Kai !Garib|NC|Kakamas;Kamiesberg|NC|Garies;Kannaland|WC|Ladismith;Kareeberg|NC|Carnarvon;Karoo Hoogland|NC|Williston;Kgatelopele|NC|Daniëlskuil;Kgetlengrivier|NW|Koster;Khâi-Ma|NC|Pofadder;!Kheis|NC|Groblershoop;King Sabata Dalindyebo|EC|Mthatha;Knysna|WC|Knysna;Kopanong|FS|Trompsburg;Kou-Kamma|EC|Kareedouw;Kouga|EC|Jeffreys Bay;Kumkani Mhlontlo|EC|Qumbu;KwaDukuza|KZN|KwaDukuza (Stanger);Laingsburg|WC|Laingsburg;Langeberg|WC|Robertson;Lekwa|MP|Standerton;Lekwa-Teemane|NW|Christiana;Lepelle-Nkumpi|LP|Lebowakgomo;Lephalale|LP|Lephalale;Lesedi|GP|Heidelberg;Letsemeng|FS|Koffiefontein;Madibeng|NW|Brits;Mafube|FS|Frankfort;Magareng|NC|Warrenton;Mahikeng|NW|Mahikeng;Makana|EC|Makhanda (Grahamstown);Makhado|LP|Louis Trichardt;Makhuduthamaga|LP|Jane Furse;Maluti-a-Phofung|FS|Harrismith;Mamusa|NW|Schweizer-Reneke;Mandeni|KZN|Mandeni;Mantsopa|FS|Ladybrand;Maphumulo|KZN|Maphumulo;Maquassi Hills|NW|Wolmaransstad;Maruleng|LP|Hoedspruit;Masilonyana|FS|Theunissen;Matatiele|EC|Matatiele;Matjhabeng|FS|Welkom;Matzikama|WC|Vredendal;Mbhashe|EC|Dutywa;Mbombela|MP|Mbombela (Nelspruit);Merafong City|GP|Carletonville;Metsimaholo|FS|Sasolburg;Midvaal|GP|Meyerton;Mkhambathini|KZN|Camperdown;Mkhondo|MP|eMkhondo (Piet Retief);Mnquma|EC|Butterworth;Modimolle-Mookgophong|LP|Modimolle;Mogalakwena|LP|Mokopane;Mogale City|GP|Krugersdorp;Mohokare|FS|Zastron;Molemole|LP|Mogwadi;Moqhaka|FS|Kroonstad;Moretele|NW|Makapanstad;Moses Kotane|NW|Mogwase;Mossel Bay|WC|Mossel Bay;Mpofana|KZN|Mooi River;Msinga|KZN|Tugela Ferry;Msukaligwa|MP|Ermelo;Msunduzi|KZN|Pietermaritzburg;Mthonjaneni|KZN|Melmoth;Mtubatuba|KZN|Mtubatuba;Musina|LP|Musina;Nala|FS|Bothaville;Naledi|NW|Vryburg;Nama Khoi|NC|Springbok;Ndlambe|EC|Port Alfred;Ndwedwe|KZN|Ndwedwe;Newcastle|KZN|Newcastle;Ngqushwa|EC|Peddie;Ngwathe|FS|Parys;Nkandla|KZN|Nkandla;Nketoana|FS|Reitz;Nkomazi|MP|Malelane;Nongoma|KZN|Nongoma;Nqutu|KZN|Nquthu;Ntabankulu|EC|Ntabankulu;Nyandeni|EC|Libode;Okhahlamba|KZN|Bergville;Oudtshoorn|WC|Oudtshoorn;Overstrand|WC|Hermanus;Phokwane|NC|Hartswater;Phumelela|FS|Vrede;Pixley ka Seme|MP|Volksrust;Polokwane|LP|Polokwane;Port St Johns|EC|Port St Johns;Prince Albert|WC|Prince Albert;Ramotshere Moiloa|NW|Zeerust;Rand West City|GP|Randfontein;Ratlou|NW|Setlagole;Ray Nkonyeni|KZN|Port Shepstone;Raymond Mhlaba|EC|Fort Beaufort;Renosterberg|NC|Petrusville;Richmond|KZN|Richmond;Richtersveld|NC|Port Nolloth;Rustenburg|NW|Rustenburg;Sakhisizwe|EC|Cala;Saldanha Bay|WC|Vredenburg;Senqu|EC|Lady Grey;Setsoto|FS|Ficksburg;Siyancuma|NC|Douglas;Siyathemba|NC|Prieska;Sol Plaatje|NC|Kimberley;Stellenbosch|WC|Stellenbosch;Steve Tshwete|MP|Middelburg;Sundays River Valley|EC|Kirkwood;Swartland|WC|Malmesbury;Swellendam|WC|Swellendam;Thaba Chweu|MP|Mashishing (Lydenburg);Thabazimbi|LP|Thabazimbi;Theewaterskloof|WC|Caledon;Thembelihle|NC|Hopetown;Thembisile Hani|MP|KwaMhlanga;Thulamela|LP|Thohoyandou;Tokologo|FS|Boshof;Tsantsabane|NC|Postmasburg;Tswaing|NW|Delareyville;Tswelopele|FS|Bultfontein;Ubuntu|NC|Victoria West;Ulundi|KZN|Ulundi;Umdoni|KZN|Scottburgh;uMfolozi|KZN|KwaMbonambi;uMhlabuyalingana|KZN|Manguzi;uMhlathuze|KZN|Richards Bay;uMlalazi|KZN|Eshowe;uMngeni|KZN|Howick;uMshwathi|KZN|Wartburg;Umsobomvu|NC|Colesberg;uMuziwabantu|KZN|Harding;Umvoti|KZN|Greytown;Umzimkhulu|KZN|Umzimkhulu;Umzimvubu|EC|Mount Frere;Umzumbe|KZN|Mtwalume;uPhongolo|KZN|Pongola;Victor Khanye|MP|Delmas;Walter Sisulu|EC|Burgersdorp;Winnie Madikizela-Mandela|EC|Bizana;Witzenberg|WC|Ceres".split(";").map(x=>{const[n,p,t]=x.split("|");return {n,p,t}});
+const MUNSET=new Set(MUNIS.map(x=>x.n));
+const XMUN={"Ballito":"KwaDukuza","Hartbeespoort":"Madibeng","White River":"Mbombela","Vereeniging":"Emfuleni","Saldanha":"Saldanha Bay","Mokopane":"Mogalakwena","Robertson":"Langeberg"};
+for(const p of PL){if(p.m==="oth"){const mm=MUNIS.find(x=>x.t===p.n)||MUNIS.find(x=>x.n===XMUN[p.n]);if(mm)p.mun=mm.n}}
+for(const mm of MUNIS){if(!PL.some(p=>p.n===mm.t))PL.push({n:mm.t,m:"oth",p:mm.p,e:false,mun:mm.n});PL.push({n:mm.n+" municipality",m:"oth",p:mm.p,e:false,mun:mm.n})}
 const $=id=>document.getElementById(id);
 const R=v=>(v<-0.5?"−":"")+"R"+Math.round(Math.abs(v)).toLocaleString("en-ZA").replace(/[,  ]/g," ");
 const RS=v=>(Math.round(v)>0?"+":"")+R(v);
@@ -320,7 +331,7 @@ const rateTxt=t=>t.b.length===1?"R"+t.b[0][1].toFixed(2)+" flat":t.b.map((x,i)=>
 const DAYS=30.4,ETA=0.9;
 const st={meter:"pre",add:{},place:PL.find(p=>p.n==="Randburg"),who:"muni",ph:1,sel:null,ovr:""};
 $("ovr").innerHTML='<option value="">Automatic (recommended)</option>'+Object.entries(T).map(([k,t])=>`<option value="${k}">${t.n}</option>`).join("");
-const renderTT=()=>{$("tt").tBodies[0].innerHTML=["jhb","jhbc","tsh","ekh","cpt","dbn","nmb","mng","bcm","eskl","eskp","oth"].map(k=>{const t=T[k];return `<tr><td>${t.s}</td><td><b>${t.n}</b><div class="sp">${t.why}${k==="eskl"?"; used for prepaid up to R2 000 a month":k==="eskp"?"; used for monthly accounts, and prepaid above R2 000 a month":k==="jhb"?"; used for prepaid meters":k==="jhbc"?"; used for monthly accounts":""}</div></td><td>${rateTxt(t)}</td><td class="n">${R(t.fix)}</td></tr>`}).join("")};renderTT();
+const renderTT=()=>{$("tt").tBodies[0].innerHTML=["jhb","jhbc","tsh","ekh","cpt","dbn","nmb","mng","bcm","eskl","eskp","oth"].map(k=>{const t=T[k];return `<tr><td>${t.s}</td><td><b>${t.n}</b><div class="sp">${t.why}${k==="eskl"?"; used for prepaid up to R2 000 a month":k==="eskp"?"; used for monthly accounts, and prepaid above R2 000 a month":k==="jhb"?"; used for prepaid meters":k==="jhbc"?"; used for monthly accounts":""}</div></td><td>${rateTxt(t)}</td><td class="n">${R(t.fix)}</td></tr>`}).join("")+Object.keys(T).filter(k=>k.startsWith("mt:")).sort().map(k=>{const t=T[k];return `<tr><td>${t.s}</td><td><b>${t.n}</b><div class="sp">Loaded by admin</div></td><td>${rateTxt(t)}</td><td class="n">${R(t.fix)}</td></tr>`}).join("")};renderTT();
 const cost=(t,kwh)=>{let c=t.fix,lo=0;for(const[up,r]of t.b){if(kwh<=lo)break;c+=(Math.min(kwh,up)-lo)*r;lo=up}return c};
 const kwhFrom=(t,bill)=>{let left=bill-t.fix,lo=0,k=0;if(left<=0)return 0;for(const[up,r]of t.b){const cap=(up-lo)*r;if(left<=cap)return k+left/r;k+=up-lo;left-=cap;lo=up}return k};
 const METER={jhb:{con:"jhbc"}};
@@ -328,7 +339,7 @@ const SPLIT={jhb:1,esk:1};
 function pickTariff(bill){
  if(st.ovr){const t=T[st.ovr];if(st.ovr==="cus"){t.b=[[1e9,+$("flat").value||0]];t.fix=+$("ffix").value||0}return st.ovr}
  if(st.who==="esk")return st.meter==="con"||bill>2000?"eskp":"eskl";
- const m=st.place?st.place.m:"oth";return (METER[m]||{})[st.meter]||m;
+ const m=st.place?st.place.m:"oth";if(m==="oth"&&st.place&&st.place.mun&&T["mt:"+st.place.mun])return "mt:"+st.place.mun;return (METER[m]||{})[st.meter]||m;
 }
 function model(p,t,kwh,d,y,dod){
  const L=kwh/DAYS,P=p.kwp*y,day=L*d,night=L-day,direct=Math.min(P,day),surplus=P-direct;
@@ -347,12 +358,12 @@ function calc(){
  const tk=pickTariff(bill),t=T[tk];
  $("cusbox").hidden=st.ovr!=="cus";
  const pl=st.place,muniName=pl?T[pl.m].s:"Municipality";
- $("wMuni").textContent=pl&&pl.m!=="oth"?muniName:"Municipality";
+ $("wMuni").textContent=pl&&pl.mun?pl.mun:pl&&pl.m!=="oth"?muniName:"Municipality";
  $("wMuni").setAttribute("aria-pressed",st.who==="muni");for(const b of $("meter").children)b.setAttribute("aria-pressed",b.dataset.m===st.meter);
  $("meterhint").textContent=st.ovr?"A specific tariff is chosen under Advanced, so this has no effect.":st.who==="esk"?(st.meter==="pre"?(bill<=2000?"Eskom Homelight used: the usual prepaid tariff.":"Eskom Homepower used: prepaid homes spending over R2 000 a month are usually on it."):"Eskom Homepower used: the standard tariff for monthly accounts."):SPLIT[pl?pl.m:"oth"]?(st.meter==="pre"?"Prepaid tariff used. Switch if the customer gets a monthly bill.":"Monthly account tariff used, including its higher fixed charge."):"This supplier charges the same rates for prepaid and monthly accounts.";$("wEsk").setAttribute("aria-pressed",st.who==="esk");
  for(const b of $("ph").children)b.setAttribute("aria-pressed",+b.dataset.p===st.ph);
  const kwh=kwhFrom(t,bill),avg=kwh?(bill-t.fix)/kwh:0;
- $("tinfo").innerHTML=`<b>Tariff used: ${t.n}</b>${rateTxt(t)} + ${R(t.fix)}/month fixed. About ${K(kwh)} kWh a month at this spend.`+(t.flag?`<div class="warn">${t.flag}</div>`:"")+(pl&&pl.e&&st.who==="muni"?`<div class="warn">Parts of ${pl.n} buy directly from Eskom: confirm with the customer.</div>`:"")+(pl?`<div class="sp">${pl.n}, ${PN[pl.p]} · solar yield ${Y[pl.p]} kWh/kWp/day</div>`:"");
+ $("tinfo").innerHTML=`<b>Tariff used: ${t.n}</b>${rateTxt(t)} + ${R(t.fix)}/month fixed. About ${K(kwh)} kWh a month at this spend.`+(t.flag?`<div class="warn">${t.flag}</div>`:"")+(pl&&pl.e&&st.who==="muni"?`<div class="warn">Parts of ${pl.n} buy directly from Eskom: confirm with the customer.</div>`:"")+(pl&&pl.mun&&st.who==="muni"&&tk==="oth"?`<div class="warn">No tariff loaded for ${pl.mun} yet, so this is a typical municipal estimate. Many homes here buy from Eskom directly: check the bill.</div>`:"")+(pl?`<div class="sp">${pl.n}${pl.mun&&!pl.n.startsWith(pl.mun)?" ("+pl.mun+")":""}, ${PN[pl.p]} · solar yield ${Y[pl.p]} kWh/kWp/day</div>`:"");
  const rows=PK.map(withAdd).map(p=>{const m=model(p,t,kwh,d,y,dod),net=bill-m.after-p.fee,yr=proj(bill-m.after,p.fee,esc,p.esc/100);return {p,m,net,yr,n10:sum(yr.slice(0,10)),n20:sum(yr),ok:p.ph.includes(st.ph),fit:bill>=p.min}});
  const tp=PK.filter(p=>p.sup==="3").map(p=>p.n);$("phhint").textContent="Most homes are single-phase."+(tp.length?" "+tp.join(", ")+(tp.length>1?" need":" needs")+" three-phase.":"");
  const okr=rows.filter(r=>r.ok);
@@ -437,7 +448,7 @@ function buildPdf(){
  y+=CH+(L.cross>0&&L.cross<10?20:15);
  // assumptions
  txt("How we worked it out",M,y,{s:10,b:1});
- const as=[`Tariff: ${L.t.n}${L.pl?" ("+L.pl.n+", "+(L.meter==="con"?"monthly account":"prepaid")+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
+ const as=[`Tariff: ${L.t.n}${L.pl?" ("+L.pl.n+(L.pl.mun&&!L.pl.n.startsWith(L.pl.mun)?", "+L.pl.mun:"")+", "+(L.meter==="con"?"monthly account":"prepaid")+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
   `Solar: ${p.kwp} kWp at ${L.y.toFixed(1)} kWh per kWp a day, ${Math.round(L.d*100)}% of use in daylight, ${Math.round(L.dod*100)}% of the battery used each night. About ${K(L.used)} kWh of solar used a month. No credit for surplus solar.`,
   `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year and ends after year 10. Panel output falls 0.5% a year.`,
   `Backup time assumes about 500 W of essentials. Upkeep and battery replacement after year 10 are not included, and amounts are not adjusted for inflation.`];
@@ -475,6 +486,9 @@ function applyCfg(c){
  if(Array.isArray(c.products)&&c.products.length)PK=c.products.slice(0,40).map(normP).filter(p=>p.on);
  if(c.tariffs&&typeof c.tariffs==="object")for(const k of TK){const x=c.tariffs[k];if(!x)continue;const b=Array.isArray(x.b)?x.b.filter(v=>Array.isArray(v)&&v.length===2).map(([u,r])=>[num(u,1,1e9,1e9),num(r,0.01,50,4)]):null;
   Object.assign(T[k],{n:clean(x.n,80)||DEF_T[k].n,fix:num(x.fix,0,1e5,DEF_T[k].fix),b:b&&b.length?b:DEF_T[k].b,flag:clean(x.flag,80)||undefined})}
+ for(const k of Object.keys(T))if(k.startsWith("mt:"))delete T[k];
+ if(Array.isArray(c.mtariffs))for(const x of c.mtariffs.slice(0,260)){const mun=clean(x.mun,60);if(!MUNSET.has(mun))continue;const b=Array.isArray(x.b)?x.b.filter(v=>Array.isArray(v)&&v.length===2).map(([u,r])=>[num(u,1,1e9,1e9),num(r,0.01,50,4)]):[];if(!b.length||b[b.length-1][0]<1e9)continue;
+  T["mt:"+mun]={s:mun+" Local Municipality",n:clean(x.n,80)||mun+" domestic",why:"Loaded by admin",fix:num(x.fix,0,1e5,0),b,flag:clean(x.flag,80)||undefined}}
  if(Array.isArray(c.addons))ADD=c.addons.slice(0,30).map(normA);renderAdds();
  if(!st.escTouched)$("esc").value=GEN.tesc;
  document.querySelectorAll("#tyr,.tyr2").forEach(e=>e.textContent=GEN.tyear);
@@ -514,10 +528,13 @@ let ADIRTY=false;
 const H=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 function prodRow(p){return `<tr><td><input type="checkbox" data-k="on" ${p.on!==false?"checked":""} aria-label="Show this package" style="min-height:24px;width:24px"></td><td><input class="w10" data-k="n" value="${H(p.n)}" maxlength="24"></td><td><input class="w7" type="number" data-k="fee" value="${H(p.fee)}" step="1"></td><td><input class="w5" type="number" data-k="esc" value="${H(p.esc)}" step="0.5"></td><td><input class="w5" type="number" data-k="pan" value="${H(p.pan)}"></td><td><input class="w5" type="number" data-k="kwp" value="${H(p.kwp)}" step="0.01"></td><td><input class="w5" type="number" data-k="inv" value="${H(p.inv)}" step="0.1"></td><td><input class="w5" type="number" data-k="bat" value="${H(p.bat)}" step="0.01"></td><td><select class="w10" data-k="sup">${Object.entries(SUPL).map(([k,v])=>`<option value="${k}" ${String(p.sup)===k?"selected":""}>${v}</option>`).join("")}</select></td><td><input class="w7" type="number" data-k="min" value="${H(p.min)}" step="100"></td><td><input class="w16" data-k="ltd" value="${H(p.ltd)}" maxlength="80"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
 function addRow(a){return `<tr data-id="${H(a.id)}"><td><input type="checkbox" data-k="on" ${a.on!==false?"checked":""} aria-label="Show this add-on" style="min-height:24px;width:24px"></td><td><input class="w10" data-k="n" value="${H(a.n)}" maxlength="40"></td><td><select class="w10" data-k="type">${Object.entries(ATYP).map(([k,v])=>`<option value="${k}" ${a.type===k?"selected":""}>${v[0]}</option>`).join("")}</select></td><td><input class="w5" type="number" data-k="val" value="${H(a.val)}" step="0.01"></td><td><input class="w7" type="number" data-k="fee" value="${H(a.fee)}" step="1"></td><td><input class="w5" type="number" data-k="max" value="${H(a.max)}" step="1"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
+function mtRow(x){return `<tr><td><input class="w16" list="mlist" data-k="mun" value="${H(x.mun)}" placeholder="Start typing a name"></td><td><input class="w16" data-k="n" value="${H(x.n)}" maxlength="80"></td><td><input class="w7" type="number" data-k="fix" value="${H(x.fix)}" step="0.01"></td><td><input class="w16" data-k="b" value="${H(Array.isArray(x.b)&&x.b.length?blocksTxt(x.b):"")}" placeholder="*=4.20"></td><td><input class="w16" data-k="flag" value="${H(x.flag||"")}" maxlength="80"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
 function fillAdmin(src){
  const c=src||LIVE||{};const prods=(Array.isArray(c.products)&&c.products.length?c.products:DEF_PK).map(normP);
  $("a_tesc").value=num(c.tesc,0,25,DEF_GEN.tesc);$("a_pdate").value=clean(c.pdate,40)||DEF_GEN.pdate;$("a_tyear").value=clean(c.tyear,20)||DEF_GEN.tyear;
  $("aprod").tBodies[0].innerHTML=prods.map(prodRow).join("");
+ if(!$("mlist").children.length)$("mlist").innerHTML=MUNIS.map(m=>`<option value="${H(m.n)}">`).join("");
+ $("amt").tBodies[0].innerHTML=(Array.isArray(c.mtariffs)?c.mtariffs:[]).map(mtRow).join("");
  $("aadd").tBodies[0].innerHTML=(Array.isArray(c.addons)?c.addons:DEF_ADD).map(normA).map(addRow).join("");
  const base=src&&src.tariffs?src.tariffs:(c.tariffs||{});
  $("atar").tBodies[0].innerHTML=TK.map(k=>{const t=base[k]||{},d=DEF_T[k],b=Array.isArray(t.b)&&t.b.length?t.b:(src?d.b:T[k].b);return `<tr data-t="${k}"><td>${H(d.s)}</td><td><input class="w16" data-k="n" value="${H(t.n||(src?d.n:T[k].n))}" maxlength="80"></td><td><input class="w7" type="number" data-k="fix" value="${H(t.fix??(src?d.fix:T[k].fix))}" step="0.01"></td><td><input class="w16" data-k="b" value="${H(blocksTxt(b))}"></td><td><input class="w16" data-k="flag" value="${H(t.flag||(src?d.flag||"":T[k].flag||""))}" maxlength="80"></td></tr>`}).join("");
@@ -539,8 +556,12 @@ function readAdmin(){
   tariffs[k]={n:g("n").value.trim()||DEF_T[k].n,fix,b:b||[],flag:g("flag").value.trim()}}
  const addons=[...$("aadd").tBodies[0].rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-k="${k}"]`);const a={id:tr.dataset.id,on:g("on").checked,n:g("n").value.trim(),type:g("type").value,val:+g("val").value,fee:+g("fee").value,max:+g("max").value||1};
   if(!a.n)errs.push(`Add-on ${i+1}: give it a name.`);if(!(a.val>0))errs.push(`${a.n||"Add-on "+(i+1)}: size must be above 0.`);if(!(a.fee>=0))errs.push(`${a.n}: fee can't be negative.`);return a});
+ const seen=new Set(),mtariffs=[...$("amt").tBodies[0].rows].map(tr=>{const g=k=>tr.querySelector(`[data-k="${k}"]`);const mun=g("mun").value.trim(),b=parseBlocks(g("b").value),fix=+g("fix").value;
+  if(!MUNSET.has(mun))errs.push(`"${mun||"(blank)"}" isn't one of the 205 local municipalities. Pick it from the list.`);else if(seen.has(mun))errs.push(`${mun} has two tariffs.`);seen.add(mun);
+  if(!b)errs.push(`${mun}: energy rates aren't in the "350=3.34, *=4.44" form, ending with *.`);if(!(fix>=0))errs.push(`${mun}: fixed charge must be R0 or more.`);
+  return {mun,n:g("n").value.trim()||mun+" domestic",fix,b:b||[],flag:g("flag").value.trim()}});
  const tesc=+$("a_tesc").value;if(!(tesc>=0&&tesc<=25))errs.push("Default tariff increase must be 0 to 25%.");
- return {errs,cfg:{products,addons,tariffs,tesc,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
+ return {errs,cfg:{products,addons,tariffs,mtariffs,tesc,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
 }
 function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)||DEF_PK).map(p=>[p.n,p])),pb=Object.fromEntries(b.products.map(p=>[p.n,p]));
  for(const n in pb){const x=pa[n],y=pb[n];if(!x){out.push("added "+n);continue}for(const[k,l]of[["fee","fee"],["esc","increase"],["kwp","kWp"],["bat","battery"],["inv","inverter"],["pan","panels"],["on","shown"],["sup","supply"],["min","guide"],["ltd","note"]])if(String(x[k]??"")!==String(y[k]??""))out.push(`${n} ${l} ${x[k]??""} → ${y[k]}`)}
@@ -548,14 +569,16 @@ function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)|
  const ta=(a&&a.tariffs)||{};for(const k in b.tariffs){const x=ta[k]||DEF_T[k],y=b.tariffs[k];if(JSON.stringify([x.n,+x.fix,x.b])!==JSON.stringify([y.n,+y.fix,y.b]))out.push("tariff "+y.n)}
  const aa=Object.fromEntries(((a&&a.addons)||DEF_ADD).map(x=>[x.id,x]));for(const y of b.addons){const x=aa[y.id];if(!x)out.push("added add-on "+y.n);else if(JSON.stringify([x.n,x.type,+x.val,+x.fee,+x.max,x.on!==false])!==JSON.stringify([y.n,y.type,y.val,y.fee,y.max,y.on]))out.push(`add-on ${y.n}: fee ${x.fee} → ${y.fee}`)}
  for(const id in aa)if(!b.addons.some(y=>y.id===id))out.push("removed add-on "+aa[id].n);
+ if(JSON.stringify((a&&a.mtariffs)||[])!==JSON.stringify(b.mtariffs))out.push("municipal tariffs ("+b.mtariffs.map(x=>x.mun).join(", ")+")");
  if(String((a&&a.tesc)??DEF_GEN.tesc)!==String(b.tesc))out.push("default tariff increase → "+b.tesc+"%");
  return out.join("; ")||"saved with no changes"}
 $("admin").addEventListener("input",()=>{ADIRTY=true;$("a_msg").textContent="Unsaved changes.";$("a_msg").className="amsg"});
 $("admin").addEventListener("click",e=>{if(e.target.matches("[data-del]")){e.target.closest("tr").remove();ADIRTY=true;$("a_msg").textContent="Unsaved changes."}});
 $("a_add").addEventListener("click",()=>{$("aprod").tBodies[0].insertAdjacentHTML("beforeend",prodRow({n:"NEW",fee:0,esc:7,pan:0,kwp:0,inv:0,bat:0,sup:"1",min:0,ltd:"",on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
 $("a_addon").addEventListener("click",()=>{$("aadd").tBodies[0].insertAdjacentHTML("beforeend",addRow({id:"a"+Date.now().toString(36),n:"",type:"bat",val:5,fee:0,max:1,on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
+$("a_mt").addEventListener("click",()=>{$("amt").tBodies[0].insertAdjacentHTML("beforeend",mtRow({mun:"",n:"",fix:0,b:[],flag:""}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
 $("a_undo").addEventListener("click",()=>fillAdmin());
-$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,tariffs:t,tesc:DEF_GEN.tesc,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
+$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,tariffs:t,mtariffs:[],tesc:DEF_GEN.tesc,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
 $("a_save").addEventListener("click",async()=>{
  const m=$("a_msg"),{errs,cfg}=readAdmin();if(errs.length){m.className="amsg bad";m.textContent=errs.slice(0,3).join(" ");return}
  const b=$("a_save");b.disabled=true;m.className="amsg";m.textContent="Saving…";
@@ -570,7 +593,7 @@ function suggest(){
  hits=PL.filter(p=>norm(p.n).includes(q)).sort((a,b)=>norm(a.n).indexOf(q)-norm(b.n).indexOf(q)).slice(0,7);hi=0;
  const box=$("sugg");box.textContent="";
  const list=hits.length?hits:[{n:"Use “"+$("loc").value.trim()+"” (other municipality)",m:"oth",p:"GP",other:1}];
- list.forEach((p,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("role","option");if(i===0)b.className="on";const a=document.createElement("b");a.style.fontWeight="500";a.textContent=p.n;const s=document.createElement("span");s.textContent=p.other?"typical municipal tariff":T[p.m].s+", "+p.p;b.append(a,s);b.addEventListener("click",()=>{if(p.other){st.place={n:$("loc").value.trim(),m:"oth",p:"GP",e:false};setPlace(st.place)}else setPlace(p)});box.append(b)});
+ list.forEach((p,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("role","option");if(i===0)b.className="on";const a=document.createElement("b");a.style.fontWeight="500";a.textContent=p.n;const s=document.createElement("span");s.textContent=p.other?"typical municipal tariff":p.mun?(p.n.startsWith(p.mun)?"":p.mun+", ")+p.p+(T["mt:"+p.mun]?"":" · typical tariff"):T[p.m].s+", "+p.p;b.append(a,s);b.addEventListener("click",()=>{if(p.other){st.place={n:$("loc").value.trim(),m:"oth",p:"GP",e:false};setPlace(st.place)}else setPlace(p)});box.append(b)});
  box.hidden=false;
 }
 $("loc").addEventListener("input",suggest);
