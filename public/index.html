@@ -76,6 +76,11 @@ details{margin-top:4px}summary{cursor:pointer;font-weight:600;min-height:44px;di
 .agen{display:grid;grid-template-columns:repeat(auto-fit,minmax(14em,1fr));gap:14px;max-width:700px}
 .ylog{font-size:13px;color:var(--mut);margin:6px 0 0;padding-left:18px}
 .adds{display:grid;gap:8px}.addr{display:grid;grid-template-columns:minmax(0,1fr) 6.5em;gap:10px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}.addr b{display:block;font-size:15px}.addr span{font-size:13px;color:var(--mut)}.addr input[type=number]{min-height:40px;padding:6px 8px}.addr input[type=checkbox]{width:26px;height:26px;justify-self:end;accent-color:light-dark(#193f2e,#fdbd14)}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 clamp(14px,2vw,24px)}.brand{font:800 20px/1 Fraunces,Georgia,serif;color:var(--yel);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}.brand i{width:22px;height:22px;border-radius:50%;background:var(--yel);box-shadow:0 0 0 5px rgba(253,189,20,.25)}
+.tlinks{display:flex;gap:8px}.tlinks a,.tlinks button{all:unset;cursor:pointer;color:var(--mint);font-weight:600;font-size:14px;padding:8px 12px;border-radius:999px;border:1px solid rgba(192,235,189,.4)}.tlinks a:hover,.tlinks button:hover{background:rgba(192,235,189,.15)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.chips button{font:600 13px "Open Sans",sans-serif;min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}.chips button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.step{display:flex;align-items:center;gap:8px;font:800 18px/1.2 Fraunces,Georgia,serif;margin:0 0 12px}.step b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font:700 13px "Open Sans",sans-serif}
+.quote{display:grid;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px}.quote .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.quote input{flex:1 1 14em;min-height:46px}
 .ykey{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--mut);margin-top:6px}
 .vsub{font-size:16px;margin-top:6px}
 .bills{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:end;height:250px;border-bottom:2px solid var(--ink);padding:0 4px}
@@ -115,7 +120,8 @@ a{color:inherit}
 </style>
 </head>
 <body>
-<section class="band" style="background:var(--green);color:#fff;padding-bottom:clamp(20px,3vw,36px)"><div class="wrap">
+<section class="band" style="background:var(--green);color:#fff;padding-bottom:clamp(20px,3vw,36px);padding-top:clamp(16px,2.4vw,28px)"><div class="wrap">
+<div class="topbar"><span class="brand"><i aria-hidden="true"></i>Versofy</span><span class="tlinks" id="tlinks"></span></div>
 <h1>Versofy monthly bill savings</h1>
 <p class="lede" style="color:var(--mint);margin:0">Enter the customer's bill and suburb or town. The calculator picks the supplier and tariff that most likely apply to a standalone home, and recommends a package. Uses the launch prices that apply from Monday 30 November 2026.</p>
 <p class="cfgst" id="cfgst">Loading the latest prices and tariffs…</p>
@@ -123,8 +129,10 @@ a{color:inherit}
 <section class="band" style="padding-top:clamp(20px,3vw,36px)"><div class="wrap">
 <div class="top">
  <form class="panel" id="f" autocomplete="off">
+  <div class="step"><b>1</b>The customer</div>
   <div class="field"><label class="lab" for="bill">Monthly electricity spend</label>
    <div class="money"><span>R</span><input type="number" id="bill" min="200" max="30000" step="50" value="4500" inputmode="numeric"></div>
+   <div class="chips" id="chips" aria-label="Common bill amounts"><button type="button" data-b="1500">R1 500</button><button type="button" data-b="2500">R2 500</button><button type="button" data-b="3500">R3 500</button><button type="button" data-b="4500">R4 500</button><button type="button" data-b="6000">R6 000</button><button type="button" data-b="8000">R8 000</button></div>
    <div class="hint">Average month incl. VAT: electricity bill or prepaid tokens bought.</div></div>
   <div class="field"><label class="lab" for="loc">Suburb or town</label>
    <input type="text" id="loc" value="Randburg" placeholder="e.g. Centurion, Durbanville, Umhlanga" aria-autocomplete="list" aria-controls="sugg">
@@ -152,11 +160,9 @@ a{color:inherit}
     <input type="range" id="dod" min="50" max="95" step="5" value="80"></div>
    <div class="field"><label class="lab" for="esc">Yearly tariff increase <output id="esco"></output></label>
     <input type="range" id="esc" min="0" max="15" step="0.5" value="9"></div>
-   <div class="hint" style="margin-top:-6px">The yearly subscription increase is set for each package by admin. The subscription ends after year 10.</div></div>
+   <div class="hint" style="margin-top:-6px">The yearly subscription increase is set for each package by admin. The subscription ends after year 10.</div>
   </details>
-  <div class="field" style="margin-top:14px"><label class="lab" for="cname">Customer name, for the PDF proposal</label>
-   <input type="text" id="cname" placeholder="Optional, e.g. Mr and Mrs Dlamini" maxlength="60"></div>
-  <button type="button" id="reset" style="margin-top:6px;min-height:44px;padding:0 16px;font:700 15px 'Open Sans';border:0;border-radius:9999px;background:var(--yel);color:var(--navy);cursor:pointer">Start over</button>
+  <button type="button" id="reset" style="margin-top:6px;min-height:44px;padding:0 16px;font:700 15px 'Open Sans';border:0;border-radius:9999px;background:var(--yel);color:var(--navy);cursor:pointer">New quote</button>
  </form>
  <div class="res" aria-live="polite">
   <div class="rec" id="rec"></div>
@@ -173,7 +179,7 @@ a{color:inherit}
   <div class="yrs" id="yrs"></div>
   <div class="panel pts" id="pts"></div>
   <div class="sum" id="sum"></div>
-  <div class="pdfrow"><button type="button" class="pdfb" id="pdf">Customer proposal (PDF)</button><span id="pdfmsg" aria-live="polite">For the package shown above. Leaves out the sales talking points.</span></div>
+  <div class="quote"><div class="step" style="margin:0"><b>2</b>Send the customer their proposal</div><div class="row"><label class="sr" for="cname" style="position:absolute;left:-9999px">Customer name</label><input type="text" id="cname" placeholder="Customer name (optional)" maxlength="60"><button type="button" class="pdfb" id="pdf">Download PDF proposal</button></div><span id="pdfmsg" aria-live="polite" style="font-size:14px;color:var(--mut)">One page for the package shown above, without the sales talking points.</span></div>
  </div>
 </div>
 </div></section>
@@ -493,6 +499,8 @@ $("alf").addEventListener("submit",async e=>{e.preventDefault();const f=e.target
  try{ME=await API("/api/login",{method:"POST",body:JSON.stringify({name:f.name.value.trim(),password:f.pw.value})});f.pw.value="";m.textContent="";setAdmin();$("admin").scrollIntoView({block:"start"})}
  catch(err){m.className="amsg bad";m.textContent=err.status===429?"Too many tries. Wait a few minutes.":"That password didn't work."}});
 $("a_out").addEventListener("click",async()=>{try{await API("/api/logout",{method:"POST"})}catch(e){}ME={role:null};setAdmin()});
+$("tlinks").innerHTML='<button type="button" id="t_admin">Admin</button><a href="/logout">Sign out</a>';
+$("t_admin").addEventListener("click",()=>{if(CANEDIT){$("admin").scrollIntoView({block:"start"});return}$("alogin").open=true;$("alogin").scrollIntoView({block:"center"});setTimeout(()=>$("alf").name.focus(),300)});
 (async()=>{await loadCfg();setInterval(loadCfg,60000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadCfg()});
  try{ME=await API("/api/me")}catch(e){}setAdmin()})();
 // ---------- admin editor
@@ -569,12 +577,15 @@ $("rec").addEventListener("click",e=>{if(e.target.id==="back"){st.sel=null;calc(
 $("tbl").addEventListener("click",e=>{const tr=e.target.closest("tr[data-n]");if(tr){st.sel=tr.dataset.n;calc();$("rec").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"})}});
 $("tbl").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-n]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();st.sel=tr.dataset.n;calc()}});
 $("f").addEventListener("input",e=>{if(!["loc","ovr"].includes(e.target.id))calc()});
-$("bill").addEventListener("input",()=>{st.sel=null});
+$("bill").addEventListener("input",()=>{st.sel=null;syncChips()});
+const syncChips=()=>{for(const c of $("chips").children)c.setAttribute("aria-pressed",+c.dataset.b===+$("bill").value)};
+$("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c)return;$("bill").value=c.dataset.b;st.sel=null;syncChips();calc()});
+syncChips();
 $("f").addEventListener("submit",e=>e.preventDefault());
 document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
-$("reset").addEventListener("click",()=>{$("cname").value="";$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
+$("reset").addEventListener("click",()=>{$("cname").value="";st.add={};renderAdds();setTimeout(syncChips);$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
 try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}st.who=s.who||"muni"}}catch(e){}
-calc();
+calc();syncChips();
 }
 </script>
 </body>

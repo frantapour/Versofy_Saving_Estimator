@@ -124,6 +124,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/health") return send(res, 200, { ok: true });
 
     // team password gate (optional)
+    if (url.pathname === "/logout") return send(res, 303, "", { Location: "/", "Set-Cookie": "vs=; Path=/; Max-Age=0" });
     if (url.pathname === "/login" && req.method === "POST") {
       if (limited(ip)) return send(res, 429, LOGIN_PAGE("Too many tries. Wait a few minutes."));
       let raw = ""; for await (const c of req) { raw += c; if (raw.length > 2000) break; }
