@@ -196,6 +196,9 @@ a{color:inherit}
 <h2 style="margin-top:36px">Estimated peak use by monthly spend</h2>
 <p class="lede" style="margin-bottom:12px">For the tariff above. Peak use is the most the home draws at once, usually in the evening with the geyser, stove and kettle on. The inverter has to carry it during outages, or the customer runs fewer appliances at a time.</p>
 <div class="scroll"><table class="stack" id="pktbl"><thead><tr><th>Monthly spend</th><th class="n">Use / month</th><th class="n">Average load</th><th class="n">Estimated peak</th><th>Smallest package that covers the peak</th></tr></thead><tbody></tbody></table></div>
+<h2 style="margin-top:36px">Package guide by monthly bill</h2>
+<p class="lede" style="margin-bottom:12px">Every package can be offered from a R1 500 bill. Below its savings point the customer pays a little more each month than they save, and that difference is the price of battery backup.</p>
+<div class="scroll"><table class="stack" id="gdtbl"><thead><tr><th>Package</th><th class="n">Inverter</th><th>R1 500 up to savings point</th><th>Saves money from</th><th>Inverter covers peak up to</th></tr></thead><tbody></tbody></table></div>
 </div></section>
 
 <section class="band adm" id="admin" hidden style="border-top:2px dashed var(--amb)"><div class="wrap">
@@ -207,7 +210,7 @@ a{color:inherit}
 <label class="field"><span class="lab">Prices effective from</span><input type="text" id="a_pdate" maxlength="40" placeholder="e.g. 30 November 2026"></label>
 <label class="field"><span class="lab">Tariffs valid for</span><input type="text" id="a_tyear" maxlength="20" placeholder="e.g. 2026/27"></label></div>
 <h3>Packages</h3>
-<div class="scroll"><table id="aprod"><thead><tr><th>Show</th><th>Name</th><th>Fee / month R</th><th>Yearly increase %</th><th>Panels</th><th>kWp</th><th>Inverter kW</th><th>Battery kWh</th><th>Supply</th><th>Guide: bills above R</th><th>Note (e.g. deal end date)</th><th></th></tr></thead><tbody></tbody></table></div>
+<div class="scroll"><table id="aprod"><thead><tr><th>Show</th><th>Name</th><th>Fee / month R</th><th>Yearly increase %</th><th>Panels</th><th>kWp</th><th>Inverter kW</th><th>Battery kWh</th><th>Supply</th><th>Saves money from bill of R</th><th>Note (e.g. deal end date)</th><th></th></tr></thead><tbody></tbody></table></div>
 <div class="arow"><button type="button" class="abtn sm" id="a_add">Add a package</button></div>
 <h3>Add-ons</h3>
 <p class="sp" style="margin:0 0 8px">Sales see an add-on only when it is shown and has a monthly fee above R0. Its fee rises each year with the package's increase. Extra panels use the package's own panel size.</p>
@@ -250,12 +253,12 @@ a{color:inherit}
 <script>
 {
 const DEF_PK=[
- {n:"GROW",fee:1399,esc:8.5,kwp:3.68,pan:8,inv:5,bat:5,sup:"1",min:1500,ltd:"",on:true},
- {n:"CHARGE",fee:2299,esc:8,kwp:4.6,pan:10,inv:8,bat:9.92,sup:"1",min:3000,ltd:"",on:true},
- {n:"PLUS",fee:2699,esc:8,kwp:5.52,pan:12,inv:12,bat:9.92,sup:"3",min:7000,ltd:"",on:true},
- {n:"MAX",fee:3399,esc:7,kwp:6.44,pan:14,inv:12,bat:14.88,sup:"1",min:6000,ltd:"",on:true},
- {n:"EPIC",fee:3599,esc:7,kwp:6.44,pan:14,inv:16,bat:14.88,sup:"1",min:8000,ltd:"",on:true},
- {n:"SUPERCHARGE",fee:4399,esc:7,kwp:12,pan:20,inv:12,bat:19.8,sup:"13",min:6000,ltd:"Black Friday deal, to 19 Jan 2027",on:true}
+ {n:"GROW",fee:1399,esc:8.5,kwp:3.68,pan:8,inv:5,bat:5,sup:"1",min:2500,ltd:"",on:true},
+ {n:"CHARGE",fee:2299,esc:8,kwp:4.6,pan:10,inv:8,bat:9.92,sup:"1",min:3500,ltd:"",on:true},
+ {n:"PLUS",fee:2699,esc:8,kwp:5.52,pan:12,inv:12,bat:9.92,sup:"3",min:4500,ltd:"",on:true},
+ {n:"MAX",fee:3399,esc:7,kwp:6.44,pan:14,inv:12,bat:14.88,sup:"1",min:5000,ltd:"",on:true},
+ {n:"EPIC",fee:3599,esc:7,kwp:6.44,pan:14,inv:16,bat:14.88,sup:"1",min:9000,ltd:"",on:true},
+ {n:"SUPERCHARGE",fee:4399,esc:7,kwp:12,pan:20,inv:12,bat:19.8,sup:"13",min:6500,ltd:"Black Friday deal, to 19 Jan 2027",on:true}
 ];
 const DEF_ADD=[{id:"bat",n:"Extra battery",type:"bat",val:5,fee:0,max:3,on:true},{id:"pan",n:"Extra panel",type:"pan",val:1,fee:0,max:8,on:true},{id:"inv",n:"Bigger inverter",type:"inv",val:8,fee:0,max:1,on:true}];
 const ATYP={bat:["Battery","kWh each"],pan:["Panels","panels each"],inv:["Inverter upgrade","kW inverter"]};
@@ -379,9 +382,9 @@ function calc(){
  if(!okr.length){$("rec").className="rec alt";$("rec").innerHTML='<div class="k">No package available</div><div class="spec">No package is set up for this supply. Ask an admin to check the package list.</div>';$("tbl").tBodies[0].innerHTML="";LAST=null;return}
  const rec=okr.reduce((a,b)=>b.net>a.net?b:a);
  const cur=rows.find(r=>r.p.n===st.sel)||rec,{p,m,net}=cur,isRec=cur===rec;
- const why=`Best net monthly saving of all ${okr.length} packages${st.ph===1?" that suit a single-phase home":""}, after the Versofy fee.`+(rec.fit?"":` Versofy's guide lists ${rec.p.n} for bills above ${R(rec.p.min)}.`);
+ const why=`Best net monthly saving of all ${okr.length} packages${st.ph===1?" that suit a single-phase home":""}, after the Versofy fee.`+(rec.fit||rec.net>=0?"":` No package saves money at this bill yet. ${rec.p.n} is the lowest-cost way to get solar and battery backup; net savings start from about ${R(rec.p.min)}.`);
  $("rec").className="rec"+(isRec?"":" alt");
- $("rec").innerHTML=`<div class="k">${isRec?"Recommended package":"Comparing with recommended "+rec.p.n+' · <button type="button" id="back">Show recommended</button>'}</div><div class="nm">${p.n}</div><div class="fee">${R(p.fee)}<small>per month${p.afee?" incl. "+R(p.afee)+" add-ons":""}</small></div><div class="spec">${p.pan} panels (${p.kwp} kWp) · ${p.inv} kW inverter · ${p.bat} kWh battery${p.adds.length?`<div style="font-size:15px;font-weight:600;color:var(--mint)">With ${p.adds.join(", ")}</div>`:""}</div><div class="why">${isRec?why:(cur.fit?"":"Versofy lists this for bills above "+R(p.min)+". ")+(cur.ok?"":"Needs a three-phase supply. ")+(p.ltd||"")}${p.inv<pk.mid?`<div style="margin-top:6px;font-weight:700;color:var(--yel)">Estimated peak use of about ${kw1(pk.mid)} kW is above the ${p.inv} kW inverter. Fine for backing up essentials; for the whole home during outages, a bigger inverter is safer.</div>`:""}</div>`;
+ $("rec").innerHTML=`<div class="k">${isRec?"Recommended package":"Comparing with recommended "+rec.p.n+' · <button type="button" id="back">Show recommended</button>'}</div><div class="nm">${p.n}</div><div class="fee">${R(p.fee)}<small>per month${p.afee?" incl. "+R(p.afee)+" add-ons":""}</small></div><div class="spec">${p.pan} panels (${p.kwp} kWp) · ${p.inv} kW inverter · ${p.bat} kWh battery${p.adds.length?`<div style="font-size:15px;font-weight:600;color:var(--mint)">With ${p.adds.join(", ")}</div>`:""}</div><div class="why">${isRec?why:(cur.fit||cur.net>=0?"":"Saves money from a bill of about "+R(p.min)+"; below that it is a backup option. ")+(cur.ok?"":"Needs a three-phase supply. ")+(p.ltd||"")}${p.inv<pk.mid?`<div style="margin-top:6px;font-weight:700;color:var(--yel)">Estimated peak use of about ${kw1(pk.mid)} kW is above the ${p.inv} kW inverter. Fine for backing up essentials; for the whole home during outages, a bigger inverter is safer.</div>`:""}</div>`;
  const neg=Math.round(net)<0,sav=bill-m.after,hrs=Math.round(p.bat*dod/ESS),hTxt=hrs>24?"more than a day":"about "+hrs+" hours";
  const yr=cur.yr,cross=yr.findIndex(x=>x>0),sav11=sav*((1+esc)*(1-DEG))**10;
  const v=$("net");v.textContent=neg?"Battery backup for "+R(-net)+" a month":"Saves "+R(net)+" a month";v.className="verdict "+(neg?"bk":"pos");
@@ -402,8 +405,9 @@ function calc(){
  LAST={pk,meter:st.meter,p,m,net,neg,bill,t,kwh,yr,n10:cur.n10,n20:cur.n20,cross,sav,sav11,hTxt,d,y,dod,esc:$("esc").value,se:p.esc,pl,isRec,used:m.used};
  $("pts").innerHTML=`<h3>What to say to the customer</h3><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
  $("sum").textContent=`Worked sum: ${K(kwh)} kWh/month at about R${avg.toFixed(2)}/kWh. ${p.kwp} kWp × ${y.toFixed(1)} kWh × 30.4 days = ${K(m.prod)} kWh made; ${K(m.direct)} kWh used in daylight + ${K(m.stored)} kWh from the battery at night. ${K(m.grid)} kWh still from the grid = ${R(m.after)}. ${R(bill)} − ${R(m.after)} − ${R(p.fee)} = ${R(net)}. ${K(m.waste)} kWh of solar not used (no feed-in).`;
- $("tbl").tBodies[0].innerHTML=rows.map(r=>`<tr tabindex="0" data-n="${r.p.n}" class="${r===cur?"sel":""}"><td data-l="Package"><span><span class="pk">${r.p.n}</span>${r===rec?'<span class="tag best">Recommended</span>':""}${r.p.ltd?`<span class="tag ltd">Limited</span>`:""}${!r.fit?`<div class="sp">Versofy: bills above ${R(r.p.min)}</div>`:""}${!r.ok?`<div class="sp">Needs three-phase</div>`:""}</span></td><td data-l="System"><span>${r.p.pan} panels, ${r.p.kwp} kWp · ${r.p.inv} kW · ${r.p.bat} kWh<div class="sp">${PHL(r.p)}</div>${r.p.inv<pk.mid?`<div class="sp bk" style="font-weight:600">Inverter below est. ${kw1(pk.mid)} kW peak</div>`:""}</span></td><td class="n" data-l="Fee / month"><span>${R(r.p.fee)}<div class="sp">+${r.p.esc}% a year</div></span></td><td class="n" data-l="Solar used">${K(r.m.used)} kWh</td><td class="n" data-l="Grid bill after">${R(r.m.after)}</td><td class="n ${CM(r.net)}" data-l="Net / month">${RS(r.net)}</td><td class="n ${CM(r.n10)}" data-l="Net, 10 years">${RS(r.n10)}</td><td class="n ${CL(r.n20)}" data-l="Net, 20 years">${RS(r.n20)}</td></tr>`).join("");
+ $("tbl").tBodies[0].innerHTML=rows.map(r=>`<tr tabindex="0" data-n="${r.p.n}" class="${r===cur?"sel":""}"><td data-l="Package"><span><span class="pk">${r.p.n}</span>${r===rec?'<span class="tag best">Recommended</span>':""}${r.p.ltd?`<span class="tag ltd">Limited</span>`:""}${!r.fit&&r.net<0?`<div class="sp">Backup option · saves from ${R(r.p.min)}</div>`:""}${!r.ok?`<div class="sp">Needs three-phase</div>`:""}</span></td><td data-l="System"><span>${r.p.pan} panels, ${r.p.kwp} kWp · ${r.p.inv} kW · ${r.p.bat} kWh<div class="sp">${PHL(r.p)}</div>${r.p.inv<pk.mid?`<div class="sp bk" style="font-weight:600">Inverter below est. ${kw1(pk.mid)} kW peak</div>`:""}</span></td><td class="n" data-l="Fee / month"><span>${R(r.p.fee)}<div class="sp">+${r.p.esc}% a year</div></span></td><td class="n" data-l="Solar used">${K(r.m.used)} kWh</td><td class="n" data-l="Grid bill after">${R(r.m.after)}</td><td class="n ${CM(r.net)}" data-l="Net / month">${RS(r.net)}</td><td class="n ${CM(r.n10)}" data-l="Net, 10 years">${RS(r.n10)}</td><td class="n ${CL(r.n20)}" data-l="Net, 20 years">${RS(r.n20)}</td></tr>`).join("");
  const live=PK.filter(p=>p.ph.includes(st.ph)).slice().sort((a,b)=>a.inv-b.inv||a.fee-b.fee);
+ {const top=p=>{let u=0;for(let x=1500;x<=20000;x+=500){if(p.inv>=peakKW(kwhFrom(t,x)).mid)u=x;else break}return u};$("gdtbl").tBodies[0].innerHTML=PK.map(p=>{const u=top(p);return `<tr><td data-l="Package"><b>${p.n}</b>${p.sup==="3"?'<div class="sp">Three-phase only</div>':""}</td><td class="n" data-l="Inverter">${p.inv} kW</td><td data-l="R1 500 up to savings point">${p.min>1500?"Backup option":"n/a"}</td><td data-l="Saves money from"><b>${R(p.min)}</b></td><td data-l="Inverter covers peak up to">${u>=20000?"R20 000+":u?R(u):"Below R1 500"}</td></tr>`}).join("")}
  $("pktbl").tBodies[0].innerHTML=[1500,2000,2500,3000,4000,5000,6000,7000,8000,9000,10000].map(b=>{const k=kwhFrom(t,b),q=peakKW(k),fit=live.find(p=>p.inv>=q.mid);return `<tr class="${Math.abs(b-bill)<250?"sel":""}"><td data-l="Monthly spend"><b>${R(b)}</b></td><td class="n" data-l="Use / month">${K(k)} kWh</td><td class="n" data-l="Average load">${kw1(q.avg)} kW</td><td class="n" data-l="Estimated peak"><b>${kw1(q.mid)} kW</b><div class="sp">${kw1(q.lo)}–${kw1(q.hi)} kW</div></td><td data-l="Covers the peak">${fit?`${fit.n} (${fit.inv} kW inverter)`:"None: needs a bigger inverter"}</td></tr>`}).join("");
  try{localStorage.setItem("vsf-calc2",JSON.stringify({bill:$("bill").value,loc:st.place&&st.place.n,who:st.who,meter:st.meter,ph:st.ph,day:$("day").value}))}catch(e){}
 }
