@@ -48,7 +48,7 @@ details{margin-top:4px}summary{cursor:pointer;font-weight:600;min-height:44px;di
 .res{display:grid;gap:18px}
 .rec{background:var(--green);color:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(18px,2.6vw,28px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 20px;align-items:end}
 .rec .k{font-weight:700;font-size:17px;grid-column:1/-1;color:var(--mint)}
-.rec .upsl{margin-top:10px;padding:10px 12px;border:1px dashed currentColor;border-radius:10px;font-size:15px}.rec .upsl button{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}
+.rec .upsl{margin-top:10px;padding:10px 12px;border:1px dashed currentColor;border-radius:10px;font-size:15px}.rec .invb{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}.rec .upsl button{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}
 .rec .chg{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:15px;font-weight:600;color:inherit}.rec .chg select{min-height:44px;width:auto;max-width:100%;font:inherit;font-weight:700;padding:6px 10px;border-radius:10px;border:1px solid currentColor;background:transparent;color:inherit}.rec .chg option{color:#0b2239;background:#fff}
 .rec .nm{font:800 clamp(56px,9vw,96px)/.95 Fraunces,Georgia,serif;letter-spacing:-.02em;overflow-wrap:anywhere;color:var(--yel)}
 .rec .fee{font:800 clamp(30px,4vw,42px)/1 Fraunces,Georgia,serif;text-align:right;white-space:nowrap}
@@ -219,6 +219,10 @@ a{color:inherit}
 <p class="sp" style="margin:0 0 8px">Sales see an add-on only when it is shown and has a monthly fee above R0. Its fee rises each year with the package's increase. Extra panels use the package's own panel size.</p>
 <div class="scroll"><table id="aadd"><thead><tr><th>Show</th><th>Name</th><th>Type</th><th>Size per add-on</th><th>Fee / month R</th><th>Most per quote</th><th></th></tr></thead><tbody></tbody></table></div>
 <div class="arow"><button type="button" class="abtn sm" id="a_addon">Add an add-on</button></div>
+<h3>Inverter upgrades (single-phase homes only)</h3>
+<p class="sp" style="margin:0 0 8px">Swaps a package's inverter for a bigger one. Sales see an upgrade only when it is shown and has a monthly fee above R0. Three-phase homes get no inverter upgrade.</p>
+<div class="scroll"><table id="ainv"><thead><tr><th>Show</th><th>From kW</th><th>To kW</th><th>Fee / month R</th><th></th></tr></thead><tbody></tbody></table></div>
+<div class="arow"><button type="button" class="abtn sm" id="a_inv">Add an upgrade</button></div>
 <h3>Tariffs</h3>
 <p class="sp" style="margin:0 0 8px">Energy rates per kWh incl. VAT, as price blocks: "350=3.34, 500=3.83, *=4.44" means up to 350 kWh at R3.34, 351 to 500 at R3.83, and the rest at R4.44. One flat rate is "*=4.11".</p>
 <div class="scroll"><table id="atar"><thead><tr><th>Supplier</th><th>Tariff name</th><th>Fixed R / month</th><th>Energy rates</th><th>Warning shown to sales (optional)</th></tr></thead><tbody></tbody></table></div>
@@ -263,8 +267,10 @@ const DEF_PK=[
  {n:"EPIC",fee:3599,esc:7,kwp:6.44,pan:14,inv:16,bat:14.88,sup:"1",g:8000,min:9000,ltd:"",on:true},
  {n:"SUPERCHARGE",fee:4399,esc:7,kwp:12,pan:20,inv:12,bat:19.8,sup:"13",g:6000,min:6500,ltd:"Black Friday deal, to 19 Jan 2027",on:true}
 ];
-const DEF_ADD=[{id:"bat",n:"Extra battery",type:"bat",val:5,fee:0,max:3,on:true},{id:"pan",n:"Extra panel",type:"pan",val:1,fee:0,max:8,on:true},{id:"inv",n:"Bigger inverter",type:"inv",val:8,fee:0,max:1,on:true}];
-const ATYP={bat:["Battery","kWh each"],pan:["Panels","panels each"],inv:["Inverter upgrade","kW inverter"]};
+const DEF_ADD=[{id:"bat",n:"Extra battery",type:"bat",val:5,fee:0,max:3,on:true},{id:"pan",n:"Extra panel",type:"pan",val:1,fee:0,max:8,on:true}];
+const DEF_INV=[[5,8],[5,12],[5,16],[8,12],[8,16],[12,16]].map(([f,t])=>({from:f,to:t,fee:0,on:true}));
+const normI=r=>({from:num(r.from,1,100,5),to:num(r.to,1,100,8),fee:num(r.fee,0,1e5,0),on:r.on!==false});
+const ATYP={bat:["Battery","kWh each"],pan:["Panels","panels each"]};
 const normA=a=>{const type=ATYP[a.type]?a.type:"bat";return {id:clean(a.id,30).replace(/[^A-Za-z0-9_-]/g,"")||"a"+Math.random().toString(36).slice(2,8),n:clean(a.n,40)||"Add-on",type,val:num(a.val,0,200,0),fee:num(a.fee,0,1e5,0),max:type==="inv"?1:Math.round(num(a.max,1,50,1)),on:a.on!==false}};
 const DEF_GEN={tesc:9,pdate:"30 November 2026",tyear:"2026/27",asOf:"26 November 2026"};
 const SUPL={"1":"Single-phase only","13":"Single or three-phase","3":"Three-phase only"};
@@ -273,14 +279,16 @@ const num=(v,lo,hi,d)=>{const x=+v;return Number.isFinite(x)?Math.min(hi,Math.ma
 const GDEF=p=>{const n=String(p.n||"").toUpperCase().replace(/\s*3P$/,"");const d=DEF_PK.find(x=>x.n.replace(/\s*3P$/,"")===n);return d?d.g:num(p.min,0,1e6,0)};
 const normP=p=>{const sup=["1","13","3"].includes(String(p.sup))?String(p.sup):"1";return {n:clean(p.n,24)||"PACKAGE",fee:num(p.fee,0,1e6,0),esc:num(p.esc,0,30,0),kwp:num(p.kwp,0,200,0),pan:Math.round(num(p.pan,0,500,0)),inv:num(p.inv,0,200,0),bat:num(p.bat,0,500,0),sup,ph:sup==="3"?[3]:sup==="1"?[1]:[1,3],g:p.g!=null&&p.g!==""?num(p.g,0,1e6,0):GDEF(p),min:num(p.min,0,1e6,0),ltd:clean(p.ltd,80),on:p.on!==false}};
 let PK=DEF_PK.map(normP);
-let ADD=DEF_ADD.map(normA);
+let ADD=DEF_ADD.map(normA),INV=DEF_INV.map(normI);
+const invUp=(p,to)=>st.ph===1&&p.ph.includes(1)&&to>p.inv?INV.find(r=>r.on&&r.fee>0&&r.from===p.inv&&r.to===to):null;
 const PHL=p=>SUPL[p.sup];
-const addTxt=(a,q)=>a.type==="inv"?`${a.n} (${a.val} kW)`:a.type==="bat"?`${q} × ${a.n} (${+(a.val*q).toFixed(2)} kWh)`:`${q} × ${a.n} (${a.val*q} panel${a.val*q>1?"s":""})`;
+const addTxt=(a,q)=>a.type==="bat"?`${q} × ${a.n} (${+(a.val*q).toFixed(2)} kWh)`:`${q} × ${a.n} (${a.val*q} panel${a.val*q>1?"s":""})`;
 function withAdd(p,Q){Q=Q||st.add;let kwp=p.kwp,pan=p.pan,bat=p.bat,inv=p.inv,afee=0;const adds=[];const per=p.pan?p.kwp/p.pan:0.46;
  for(const a of ADD){if(!a.on||!(a.fee>0))continue;const q=Math.min(a.max,Math.max(0,Math.round(Q[a.id]||0)));if(!q)continue;
   if(a.type==="bat"){bat+=a.val*q;afee+=a.fee*q;adds.push(addTxt(a,q))}
   else if(a.type==="pan"){pan+=a.val*q;kwp+=a.val*q*per;afee+=a.fee*q;adds.push(addTxt(a,q))}
-  else if(a.val>inv){inv=a.val;afee+=a.fee;adds.push(addTxt(a,1))}}
+  }
+ const iu=invUp(p,+Q.invTo||0);if(iu){inv=iu.to;afee+=iu.fee;adds.push(`inverter upgrade ${iu.from} to ${iu.to} kW`)}
  return {...p,kwp:+kwp.toFixed(2),pan,bat:+bat.toFixed(2),inv,base:p.fee,afee,fee:p.fee+afee,adds}}
 // blocks [upper kWh, R/kWh incl VAT]
 const T={
@@ -380,7 +388,7 @@ function calc(){
  for(const b of $("ph").children)b.setAttribute("aria-pressed",+b.dataset.p===st.ph);
  const kwh=kwhFrom(t,bill),avg=kwh?(bill-t.fix)/kwh:0,pk=peakKW(kwh);
  $("tinfo").innerHTML=`<b>Tariff used: ${t.n}</b>${rateTxt(t)} + ${R(t.fix)}/month fixed. About ${K(kwh)} kWh a month at this spend.`+(t.flag?`<div class="warn">${t.flag}</div>`:"")+(pl&&pl.e&&st.who==="muni"?`<div class="warn">Parts of ${pl.n} buy directly from Eskom: confirm with the customer.</div>`:"")+(pl&&pl.mun&&st.who==="muni"&&tk==="oth"?`<div class="warn">We couldn't confirm a 2026/27 tariff for ${pl.mun} yet, so this is a typical municipal estimate. Many homes here buy from Eskom directly: check the bill.</div>`:"")+(pl?`<div class="sp">${pl.n}${pl.mun&&!pl.n.startsWith(pl.mun)?" ("+pl.mun+")":""}, ${PN[pl.p]} · solar yield ${Y[pl.p]} kWh/kWp/day</div>`:"");
- const rows=PK.map(withAdd).map(p=>{const m=model(p,t,kwh,d,y,dod),net=bill-m.after-p.fee,yr=proj(bill-m.after,p.fee,esc,p.esc/100);return {p,m,net,yr,n10:sum(yr.slice(0,10)),n20:sum(yr),ok:p.ph.includes(st.ph),fit:bill>=p.min}});
+ const rows=PK.map(p=>withAdd(p)).map(p=>{const m=model(p,t,kwh,d,y,dod),net=bill-m.after-p.fee,yr=proj(bill-m.after,p.fee,esc,p.esc/100);return {p,m,net,yr,n10:sum(yr.slice(0,10)),n20:sum(yr),ok:p.ph.includes(st.ph),fit:bill>=p.min}});
  const tp=PK.filter(p=>p.ph.includes(3)).map(p=>p.n);$("phhint").textContent="Most homes are single-phase."+(tp.length?" Three-phase homes: "+tp.join(", ")+" only.":"");
  const okr=rows.filter(r=>r.ok);
  if(!okr.length){$("rec").className="rec alt";$("rec").innerHTML='<div class="k">No package available</div><div class="spec">No package is set up for this supply. Ask an admin to check the package list.</div>';$("tbl").tBodies[0].innerHTML="";LAST=null;return}
@@ -388,9 +396,9 @@ function calc(){
  const deal=elig.filter(r=>{if(!r.p.ltd)return false;const m=r.p.ltd.match(/(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* (\d{4})/);return !m||new Date(m[1]+" "+m[2]+" "+m[3]+" 23:59")>=new Date()}),pool=deal.length?deal:elig,rec=elig.length?pool.reduce((a,b)=>b.p.g>a.p.g||(b.p.g===a.p.g&&b.net>a.net)?b:a):okr.reduce((a,b)=>b.p.fee<a.p.fee?b:a);
  const alts=okr.filter(r=>r!==rec&&r.p.g===rec.p.g&&bill>=r.p.g);
  const cur=rows.find(r=>r.p.n===st.sel)||rec,{p,m,net}=cur,isRec=cur===rec;
- let ups="";{const base=PK.find(x=>x.n===p.n),la=ADD.filter(a=>a.on&&a.fee>0&&a.type!=="inv");
+ let ups="";{const base=PK.find(x=>x.n===p.n),la=ADD.filter(a=>a.on&&a.fee>0);
   if(base&&la.length){const opts=[];const rng=a=>Array.from({length:Math.min(a.max,8)+1},(_,i)=>i);
-   const rec2=(i,Q)=>{if(i===la.length){const q=withAdd(base,{...Q,...Object.fromEntries(ADD.filter(a=>a.type==="inv").map(a=>[a.id,st.add[a.id]||0]))}),mm=model(q,t,kwh,d,y,dod);opts.push({Q:{...Q},q,net:bill-mm.after-q.fee});return}for(const n of rng(la[i]))rec2(i+1,{...Q,[la[i].id]:n})};rec2(0,{});
+   const rec2=(i,Q)=>{if(i===la.length){const q=withAdd(base,{...Q,invTo:st.add.invTo||0}),mm=model(q,t,kwh,d,y,dod);opts.push({Q:{...Q},q,net:bill-mm.after-q.fee});return}for(const n of rng(la[i]))rec2(i+1,{...Q,[la[i].id]:n})};rec2(0,{});
    const same=o=>la.every(a=>(o.Q[a.id]||0)===(Math.round(st.add[a.id]||0)));
    const pos=opts.filter(o=>o.net>=0).sort((a,b)=>a.q.afee-b.q.afee||b.net-a.net)[0],top=opts.reduce((a,b)=>b.net>a.net?b:a);
    const pickO=net<0&&pos?pos:top;
@@ -399,7 +407,7 @@ function calc(){
    else if(net<0&&!pos)ups=`<div class="upsl">${bill-t.fix<p.base?`Extra panels or batteries can't make ${p.n} save money at this bill: even if solar covered all of it, the grid bill would only drop by about ${R(Math.max(0,bill-t.fix))}, less than the ${R(p.base)} fee.`:`At current add-on prices, extra panels or batteries don't make ${p.n} save money at this bill.`}</div>`}}
  const why=`Versofy's guide for ${st.ph===3?"three-phase":"single-phase"} homes: ${rec.p.n} suits bills above ${R(rec.p.g)}.`+(bill<rec.p.g?` This bill is below that, so ${rec.p.n} is the lowest-cost option.`:"")+(rec.net<0?` At this bill it doesn't save money yet: the monthly figure is the cost of backup. Net savings start from about ${R(rec.p.min)}.`:"")+(alts.length?` ${alts.map(a=>a.p.n).join(", ")} also fits this bill${alts.some(a=>a.p.ltd)?" (limited deal)":""}.`:"")+(best!==rec&&best.net>0&&best.net>rec.net+100?` ${best.p.n} gives the biggest estimated saving here (${RS(best.net)} a month).`:"")+" Use Change package to pick another."
  $("rec").className="rec"+(isRec?"":" alt");
- $("rec").innerHTML=`<div class="k">${isRec?"Recommended package":"Chosen package · recommended is "+rec.p.n+' · <button type="button" id="back">Show recommended</button>'}</div><label class="chg">Change package <select id="pksel">${rows.map(r=>`<option value="${r.p.n.replace(/[&"<>]/g,"")}" ${r===cur?"selected":""} ${r.ok?"":"disabled"}>${r.p.n.replace(/[&"<>]/g,"")}${r===rec?" (recommended)":""}${r.ok?"":" (not for this supply)"}</option>`).join("")}</select></label><div class="nm">${p.n}</div><div class="fee">${R(p.fee)}<small>per month${p.afee?" incl. "+R(p.afee)+" add-ons":""}</small></div><div class="spec">${p.pan} panels (${p.kwp} kWp) · ${p.inv} kW inverter · ${p.bat} kWh battery${p.adds.length?`<div style="font-size:15px;font-weight:600;color:var(--mint)">With ${p.adds.join(", ")}</div>`:""}</div><div class="why">${isRec?why:(cur.fit||cur.net>=0?"":"Saves money from a bill of about "+R(p.min)+"; below that it is a backup option. ")+(cur.ok?"":(p.sup==="3"?"Needs a three-phase supply. ":"For single-phase homes only. "))+(p.ltd||"")}${p.inv<pk.mid?`<div style="margin-top:6px;font-weight:700;color:var(--yel)">Estimated peak use of about ${kw1(pk.mid)} kW is above the ${p.inv} kW inverter. Fine for backing up essentials; for the whole home during outages, a bigger inverter is safer.</div>`:""}${ups}</div>`;
+ $("rec").innerHTML=`<div class="k">${isRec?"Recommended package":"Chosen package · recommended is "+rec.p.n+' · <button type="button" id="back">Show recommended</button>'}</div><label class="chg">Change package <select id="pksel">${rows.map(r=>`<option value="${r.p.n.replace(/[&"<>]/g,"")}" ${r===cur?"selected":""} ${r.ok?"":"disabled"}>${r.p.n.replace(/[&"<>]/g,"")}${r===rec?" (recommended)":""}${r.ok?"":" (not for this supply)"}</option>`).join("")}</select></label><div class="nm">${p.n}</div><div class="fee">${R(p.fee)}<small>per month${p.afee?" incl. "+R(p.afee)+" add-ons":""}</small></div><div class="spec">${p.pan} panels (${p.kwp} kWp) · ${p.inv} kW inverter · ${p.bat} kWh battery${p.adds.length?`<div style="font-size:15px;font-weight:600;color:var(--mint)">With ${p.adds.join(", ")}</div>`:""}</div><div class="why">${isRec?why:(cur.fit||cur.net>=0?"":"Saves money from a bill of about "+R(p.min)+"; below that it is a backup option. ")+(cur.ok?"":(p.sup==="3"?"Needs a three-phase supply. ":"For single-phase homes only. "))+(p.ltd||"")}${p.inv<pk.mid?`<div style="margin-top:6px;font-weight:700;color:var(--yel)">Estimated peak use of about ${kw1(pk.mid)} kW is above the ${p.inv} kW inverter. Fine for backing up essentials; for the whole home during outages, a bigger inverter is safer.${(()=>{const b0=PK.find(x=>x.n===p.n);if(!b0)return "";const u=INV.filter(r=>r.on&&r.fee>0&&r.from===b0.inv&&r.to>=pk.mid&&st.ph===1&&b0.ph.includes(1)).sort((a,b)=>a.to-b.to)[0];return u&&p.inv<u.to?` <button type="button" class="invb" data-inv="${u.to}">Upgrade to ${u.to} kW (+${R(u.fee)}/month)</button>`:""})()}</div>`:""}${ups}</div>`;
  const neg=Math.round(net)<0,sav=bill-m.after,hrs=Math.round(p.bat*dod/ESS),hTxt=hrs>24?"more than a day":"about "+hrs+" hours";
  const yr=cur.yr,cross=yr.findIndex(x=>x>0),sav11=sav*((1+esc)*(1-DEG))**10;
  const v=$("net");v.textContent=neg?"Battery backup for "+R(-net)+" a month":"Saves "+R(net)+" a month";v.className="verdict "+(neg?"bk":"pos");
@@ -468,7 +476,7 @@ y+=11;txt("Over the years (illustration, not a forecast)",M,y,{s:12,b:1});
  y+=27;
  // yearly bars
  txt("Estimated net saving each year",M,y,{s:10,b:1});y+=3;
- const yr=L.yr,hi=Math.max(...yr,0),lo=Math.min(...yr,0),span=(hi-lo)||1,CH=12,bw=(W-2*M)/20,z=y+CH*hi/span;
+ const yr=L.yr,hi=Math.max(...yr,0),lo=Math.min(...yr,0),span=(hi-lo)||1,CH=ex?9:12,bw=(W-2*M)/20,z=y+CH*hi/span;
  yr.forEach((v,i)=>{const h=Math.abs(v)/span*CH;fill(v>=0?G:Am);if(h>0.2)doc.rect(M+i*bw+0.5,v>=0?z-h:z,bw-1,h,"F")});
  doc.setDrawColor(...N);doc.line(M,z,W-M,z);
  doc.setLineDashPattern([1,1],0);doc.setDrawColor(...Mu);doc.line(M+10*bw,y,M+10*bw,y+CH);doc.setLineDashPattern([],0);
@@ -482,7 +490,7 @@ y+=11;txt("Over the years (illustration, not a forecast)",M,y,{s:12,b:1});
   `Solar: ${p.kwp} kWp at ${L.y.toFixed(1)} kWh per kWp a day, ${Math.round(L.d*100)}% of use in daylight, ${Math.round(L.dod*100)}% of the battery used each night. About ${K(L.used)} kWh of solar used a month. No credit for surplus solar.`,
   `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year and ends after year 10. Panel output falls 0.5% a year.`,
   `Estimated peak use about ${kw1(L.pk.mid)} kW (${kw1(L.pk.lo)}-${kw1(L.pk.hi)} kW); the ${p.inv} kW inverter ${p.inv>=L.pk.hi?"covers it":p.inv>=L.pk.mid?"covers most peaks":"is below it, so run fewer large appliances at once during outages"}. Backup time assumes about 500 W of essentials. Upkeep and battery replacement after year 10 are not included, and amounts are not adjusted for inflation.`];
- y+=2;as.forEach(a=>{y=wrap("•  "+a,M,y+3.6,W-2*M,{s:8.5,c:Mu})-2});
+ y+=2;as.forEach(a=>{y=wrap("•  "+a,M,y+(ex?3.2:3.6),W-2*M,{s:8.5,c:Mu})-2});
  doc.setFont("helvetica","normal");doc.setFontSize(7);const dl=DISC.map(p=>doc.splitTextToSize(A(p.replace("2026/27",GEN.tyear)),W-2*M)),dh=6+dl.reduce((a,l)=>a+l.length*2.95+1.2,0)+4,dt=297-dh;
  fill(Cr);doc.rect(0,dt,W,dh,"F");txt("Disclaimer",M,dt+6,{s:8.5,b:1});let dy=dt+10;
  dl.forEach(l=>{doc.setFont("helvetica","normal");doc.setFontSize(7);col(Mu);doc.text(l,M,dy);dy+=l.length*2.95+1.2});
@@ -521,17 +529,17 @@ function applyCfg(c){
  if(c.tariffs&&typeof c.tariffs==="object")for(const k of TK){const x=c.tariffs[k];if(!x)continue;const b=Array.isArray(x.b)?x.b.filter(v=>Array.isArray(v)&&v.length===2).map(([u,r])=>[num(u,1,1e9,1e9),num(r,0.01,50,4)]):null;
   Object.assign(T[k],{n:clean(x.n,80)||DEF_T[k].n,fix:num(x.fix,0,1e5,DEF_T[k].fix),b:b&&b.length?b:DEF_T[k].b,flag:clean(x.flag,80)||undefined})}
  loadMT(Array.isArray(c.mtariffs)&&c.mtariffs.length?c.mtariffs:DEF_MT);
- if(Array.isArray(c.addons))ADD=c.addons.slice(0,30).map(normA);renderAdds();
+ if(Array.isArray(c.addons))ADD=c.addons.filter(a=>a&&a.type!=="inv").slice(0,30).map(normA);if(Array.isArray(c.invup))INV=c.invup.slice(0,30).map(normI);renderAdds();
  if(!st.escTouched)$("esc").value=GEN.tesc;
  document.querySelectorAll("#tyr,.tyr2").forEach(e=>e.textContent=GEN.tyear);
  $("ovr").innerHTML='<option value="">Automatic (recommended)</option>'+Object.entries(T).map(([k,t])=>`<option value="${k}">${t.n}</option>`).join("");$("ovr").value=st.ovr;
  renderTT();
 }
 loadMT(DEF_MT);
-function renderAdds(){const live=ADD.filter(a=>a.on&&a.fee>0);$("addf").hidden=!live.length;
- for(const k in st.add)if(!live.some(a=>a.id===k))delete st.add[k];
- $("adds").innerHTML=live.map(a=>`<label class="addr"><span><b>${a.n}</b>${a.type==="inv"?"Upgrade to "+a.val+" kW":a.type==="bat"?a.val+" kWh each":a.val+" panel"+(a.val>1?"s":"")+" each"} · ${R(a.fee)}/month${a.type==="inv"?"":" each"}</span>${a.type==="inv"?`<input type="checkbox" data-add="${a.id}" ${st.add[a.id]?"checked":""}>`:`<input type="number" min="0" max="${a.max}" step="1" value="${st.add[a.id]||0}" data-add="${a.id}" aria-label="How many: ${a.n}">`}</label>`).join("")}
-$("adds").addEventListener("input",e=>{const i=e.target.closest("[data-add]");if(!i)return;st.add[i.dataset.add]=i.type==="checkbox"?(i.checked?1:0):Math.max(0,+i.value||0);calc()});
+function renderAdds(){const live=ADD.filter(a=>a.on&&a.fee>0),tos=st.ph===1?[...new Set(INV.filter(r=>r.on&&r.fee>0).map(r=>r.to))].sort((a,b)=>a-b):[];$("addf").hidden=!live.length&&!tos.length;
+ for(const k in st.add)if(k!=="invTo"&&!live.some(a=>a.id===k))delete st.add[k];if(!tos.includes(+st.add.invTo))delete st.add.invTo;
+ $("adds").innerHTML=live.map(a=>`<label class="addr"><span><b>${a.n}</b>${a.type==="bat"?a.val+" kWh each":a.val+" panel"+(a.val>1?"s":"")+" each"} · ${R(a.fee)}/month each</span><input type="number" min="0" max="${a.max}" step="1" value="${st.add[a.id]||0}" data-add="${a.id}" aria-label="How many: ${a.n}"></label>`).join("")+(tos.length?`<label class="addr"><span><b>Bigger inverter</b>Upgrades packages with a smaller inverter; price depends on the package's inverter</span><select data-add="invTo" aria-label="Bigger inverter"><option value="0">None</option>${tos.map(t=>`<option value="${t}" ${+st.add.invTo===t?"selected":""}>${t} kW</option>`).join("")}</select></label>`:"")}
+$("adds").addEventListener("input",e=>{const i=e.target.closest("[data-add]");if(!i)return;st.add[i.dataset.add]=Math.max(0,+i.value||0);calc()});
 renderAdds();
 function setStatus(kind,txt){const e=$("cfgst");e.className="cfgst"+(kind==="warn"?" warn":"");e.textContent=txt}
 async function whoName(id){if(!USER||!id)return "an admin";try{const ps=await USER.profiles([id]);return ps[id].name||"an admin"}catch(e){return "an admin"}}
@@ -562,13 +570,15 @@ const H=v=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g
 function prodRow(p){return `<tr><td><input type="checkbox" data-k="on" ${p.on!==false?"checked":""} aria-label="Show this package" style="min-height:24px;width:24px"></td><td><input class="w10" data-k="n" value="${H(p.n)}" maxlength="24"></td><td><input class="w7" type="number" data-k="fee" value="${H(p.fee)}" step="1"></td><td><input class="w5" type="number" data-k="esc" value="${H(p.esc)}" step="0.5"></td><td><input class="w5" type="number" data-k="pan" value="${H(p.pan)}"></td><td><input class="w5" type="number" data-k="kwp" value="${H(p.kwp)}" step="0.01"></td><td><input class="w5" type="number" data-k="inv" value="${H(p.inv)}" step="0.1"></td><td><input class="w5" type="number" data-k="bat" value="${H(p.bat)}" step="0.01"></td><td><select class="w10" data-k="sup">${Object.entries(SUPL).map(([k,v])=>`<option value="${k}" ${String(p.sup)===k?"selected":""}>${v}</option>`).join("")}</select></td><td><input class="w7" type="number" data-k="g" value="${H(p.g!=null?p.g:GDEF(p))}" step="100"></td><td><input class="w7" type="number" data-k="min" value="${H(p.min)}" step="100"></td><td><input class="w16" data-k="ltd" value="${H(p.ltd)}" maxlength="80"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
 function addRow(a){return `<tr data-id="${H(a.id)}"><td><input type="checkbox" data-k="on" ${a.on!==false?"checked":""} aria-label="Show this add-on" style="min-height:24px;width:24px"></td><td><input class="w10" data-k="n" value="${H(a.n)}" maxlength="40"></td><td><select class="w10" data-k="type">${Object.entries(ATYP).map(([k,v])=>`<option value="${k}" ${a.type===k?"selected":""}>${v[0]}</option>`).join("")}</select></td><td><input class="w5" type="number" data-k="val" value="${H(a.val)}" step="0.01"></td><td><input class="w7" type="number" data-k="fee" value="${H(a.fee)}" step="1"></td><td><input class="w5" type="number" data-k="max" value="${H(a.max)}" step="1"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
 function mtRow(x){return `<tr><td><input class="w16" list="mlist" data-k="mun" value="${H(x.mun)}" placeholder="Start typing a name"></td><td><select class="w10" data-k="meter">${[["both","Prepaid and monthly"],["pre","Prepaid only"],["con","Monthly account only"]].map(([k,v])=>`<option value="${k}" ${(x.meter||"both")===k?"selected":""}>${v}</option>`).join("")}</select></td><td><input class="w16" data-k="n" value="${H(x.n)}" maxlength="80"></td><td><input class="w7" type="number" data-k="fix" value="${H(x.fix)}" step="0.01"></td><td><input class="w16" data-k="b" value="${H(Array.isArray(x.b)&&x.b.length?blocksTxt(x.b):"")}" placeholder="*=4.20"></td><td><input class="w16" data-k="flag" value="${H(x.flag||"")}" maxlength="80"></td><td><input class="w16" data-k="src" value="${H(x.src||"")}" placeholder="https://…"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
+function invRow(r){return `<tr><td><input type="checkbox" data-k="on" ${r.on!==false?"checked":""} aria-label="Show this upgrade" style="min-height:24px;width:24px"></td><td><input class="w5" type="number" data-k="from" value="${H(r.from)}" step="1"></td><td><input class="w5" type="number" data-k="to" value="${H(r.to)}" step="1"></td><td><input class="w7" type="number" data-k="fee" value="${H(r.fee)}" step="1"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
 function fillAdmin(src){
  const c=src||LIVE||{};const prods=(Array.isArray(c.products)&&c.products.length?c.products:DEF_PK).map(normP);
  $("a_tesc").value=num(c.tesc,0,25,DEF_GEN.tesc);$("a_pdate").value=clean(c.pdate,40)||DEF_GEN.pdate;$("a_tyear").value=clean(c.tyear,20)||DEF_GEN.tyear;
  $("aprod").tBodies[0].innerHTML=prods.map(prodRow).join("");
  if(!$("mlist").children.length)$("mlist").innerHTML=MUNIS.map(m=>`<option value="${H(m.n)}">`).join("");
  $("amt").tBodies[0].innerHTML=(Array.isArray(c.mtariffs)&&c.mtariffs.length?c.mtariffs:DEF_MT).map(mtRow).join("");
- $("aadd").tBodies[0].innerHTML=(Array.isArray(c.addons)?c.addons:DEF_ADD).map(normA).map(addRow).join("");
+ $("aadd").tBodies[0].innerHTML=(Array.isArray(c.addons)?c.addons:DEF_ADD).filter(a=>a&&a.type!=="inv").map(normA).map(addRow).join("");
+ $("ainv").tBodies[0].innerHTML=(Array.isArray(c.invup)?c.invup:DEF_INV).map(normI).map(invRow).join("");
  const base=src&&src.tariffs?src.tariffs:(c.tariffs||{});
  $("atar").tBodies[0].innerHTML=TK.map(k=>{const t=base[k]||{},d=DEF_T[k],b=Array.isArray(t.b)&&t.b.length?t.b:(src?d.b:T[k].b);return `<tr data-t="${k}"><td>${H(d.s)}</td><td><input class="w16" data-k="n" value="${H(t.n||(src?d.n:T[k].n))}" maxlength="80"></td><td><input class="w7" type="number" data-k="fix" value="${H(t.fix??(src?d.fix:T[k].fix))}" step="0.01"></td><td><input class="w16" data-k="b" value="${H(blocksTxt(b))}"></td><td><input class="w16" data-k="flag" value="${H(t.flag||(src?d.flag||"":T[k].flag||""))}" maxlength="80"></td></tr>`}).join("");
  const a=$("alast");a.textContent=LIVE&&LIVE.at?"Last saved "+new Date(LIVE.at).toLocaleString("en-ZA",{dateStyle:"medium",timeStyle:"short"})+".":"Nothing saved yet: the calculator is using its built-in values.";
@@ -594,7 +604,8 @@ function readAdmin(){
   if(!b)errs.push(`${mun}: energy rates aren't in the "350=3.34, *=4.44" form, ending with *.`);if(!(fix>=0))errs.push(`${mun}: fixed charge must be R0 or more.`);
   return {mun,meter,n:g("n").value.trim()||mun+" domestic",fix,b:b||[],flag:g("flag").value.trim(),src:g("src").value.trim().slice(0,300)}});
  const tesc=+$("a_tesc").value;if(!(tesc>=0&&tesc<=25))errs.push("Default tariff increase must be 0 to 25%.");
- return {errs,cfg:{products,addons,tariffs,mtariffs,tesc,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
+ const invup=[...$("ainv").tBodies[0].rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-k="${k}"]`);const r={on:g("on").checked,from:+g("from").value,to:+g("to").value,fee:+g("fee").value||0};if(!(r.to>r.from))errs.push(`Inverter upgrade ${i+1}: "to" must be bigger than "from".`);if(r.fee<0)errs.push(`Inverter upgrade ${i+1}: fee can't be negative.`);return r});
+ return {errs,cfg:{products,addons,invup,tariffs,mtariffs,tesc,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
 }
 function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)||DEF_PK).map(p=>[p.n,p])),pb=Object.fromEntries(b.products.map(p=>[p.n,p]));
  for(const n in pb){const x=pa[n],y=pb[n];if(!x){out.push("added "+n);continue}for(const[k,l]of[["fee","fee"],["esc","increase"],["kwp","kWp"],["bat","battery"],["inv","inverter"],["pan","panels"],["on","shown"],["sup","supply"],["g","website guide"],["min","savings point"],["ltd","note"]])if(String(x[k]??"")!==String(y[k]??""))out.push(`${n} ${l} ${x[k]??""} → ${y[k]}`)}
@@ -602,12 +613,14 @@ function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)|
  const ta=(a&&a.tariffs)||{};for(const k in b.tariffs){const x=ta[k]||DEF_T[k],y=b.tariffs[k];if(JSON.stringify([x.n,+x.fix,x.b])!==JSON.stringify([y.n,+y.fix,y.b]))out.push("tariff "+y.n)}
  const aa=Object.fromEntries(((a&&a.addons)||DEF_ADD).map(x=>[x.id,x]));for(const y of b.addons){const x=aa[y.id];if(!x)out.push("added add-on "+y.n);else if(JSON.stringify([x.n,x.type,+x.val,+x.fee,+x.max,x.on!==false])!==JSON.stringify([y.n,y.type,y.val,y.fee,y.max,y.on]))out.push(`add-on ${y.n}: fee ${x.fee} → ${y.fee}`)}
  for(const id in aa)if(!b.addons.some(y=>y.id===id))out.push("removed add-on "+aa[id].n);
+ if(JSON.stringify(((a&&a.invup)||DEF_INV).map(normI))!==JSON.stringify(b.invup.map(normI)))out.push("inverter upgrades ("+b.invup.map(r=>r.from+"→"+r.to+" kW R"+r.fee).join(", ")+")");
  if(JSON.stringify((a&&a.mtariffs)||[])!==JSON.stringify(b.mtariffs))out.push("municipal tariffs ("+b.mtariffs.map(x=>x.mun).join(", ")+")");
  if(String((a&&a.tesc)??DEF_GEN.tesc)!==String(b.tesc))out.push("default tariff increase → "+b.tesc+"%");
  return out.join("; ")||"saved with no changes"}
 $("admin").addEventListener("input",()=>{ADIRTY=true;$("a_msg").textContent="Unsaved changes.";$("a_msg").className="amsg"});
 $("admin").addEventListener("click",e=>{if(e.target.matches("[data-del]")){e.target.closest("tr").remove();ADIRTY=true;$("a_msg").textContent="Unsaved changes."}});
 $("a_add").addEventListener("click",()=>{$("aprod").tBodies[0].insertAdjacentHTML("beforeend",prodRow({n:"NEW",fee:0,esc:7,pan:0,kwp:0,inv:0,bat:0,sup:"1",g:0,min:0,ltd:"",on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
+$("a_inv").addEventListener("click",()=>{$("ainv").tBodies[0].insertAdjacentHTML("beforeend",invRow({from:5,to:8,fee:0,on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
 $("a_addon").addEventListener("click",()=>{$("aadd").tBodies[0].insertAdjacentHTML("beforeend",addRow({id:"a"+Date.now().toString(36),n:"",type:"bat",val:5,fee:0,max:1,on:true}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
 const csvCell=v=>{v=String(v??"");return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
 const parseCSV=t=>{const rows=[];let r=[],c="",q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===","){r.push(c);c=""}else if(ch==="\n"||ch==="\r"){if(ch==="\r"&&t[i+1]==="\n")i++;r.push(c);rows.push(r);r=[];c=""}else c+=ch}if(c||r.length){r.push(c);rows.push(r)}return rows.filter(x=>x.some(y=>y.trim()))};
@@ -622,7 +635,7 @@ $("a_csvout").addEventListener("click",async()=>{const rows=[["municipality","ap
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)});
 $("a_mt").addEventListener("click",()=>{$("amt").tBodies[0].insertAdjacentHTML("beforeend",mtRow({mun:"",n:"",fix:0,b:[],flag:""}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
 $("a_undo").addEventListener("click",()=>fillAdmin());
-$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,tariffs:t,mtariffs:DEF_MT,tesc:DEF_GEN.tesc,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
+$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,invup:DEF_INV,tariffs:t,mtariffs:DEF_MT,tesc:DEF_GEN.tesc,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
 $("a_save").addEventListener("click",async()=>{
  const m=$("a_msg"),{errs,cfg}=readAdmin();if(errs.length){m.className="amsg bad";m.textContent=errs.slice(0,3).join(" ");return}
  const b=$("a_save");b.disabled=true;m.className="amsg";m.textContent="Saving…";
@@ -645,9 +658,9 @@ $("loc").addEventListener("focus",e=>e.target.select());
 $("loc").addEventListener("keydown",e=>{const bs=[...$("sugg").children];if($("sugg").hidden||!bs.length)return;if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();hi=(hi+(e.key==="ArrowDown"?1:bs.length-1))%bs.length;bs.forEach((b,i)=>b.className=i===hi?"on":"")}if(e.key==="Enter"){e.preventDefault();bs[hi].click()}if(e.key==="Escape")$("sugg").hidden=true});
 $("meter").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.meter=b.dataset.m;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
 $("who").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.who=b.dataset.w;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
-$("ph").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.ph=+b.dataset.p;st.sel=null;calc()}});
+$("ph").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.ph=+b.dataset.p;st.sel=null;renderAdds();calc()}});
 $("ovr").addEventListener("change",e=>{st.ovr=e.target.value;calc()});
-$("rec").addEventListener("click",e=>{if(e.target.id==="back"){st.sel=null;calc()}const ap=e.target.closest("[data-apply]");if(ap){const Q=JSON.parse(ap.dataset.apply);for(const k in Q)st.add[k]=Q[k];if(!st.sel)st.sel=LAST&&LAST.p?LAST.p.n:null;renderAdds();calc()}});
+$("rec").addEventListener("click",e=>{if(e.target.id==="back"){st.sel=null;calc()}const ib=e.target.closest("[data-inv]");if(ib){st.add.invTo=+ib.dataset.inv;if(!st.sel)st.sel=LAST&&LAST.p?LAST.p.n:null;renderAdds();calc();return}const ap=e.target.closest("[data-apply]");if(ap){const Q=JSON.parse(ap.dataset.apply);for(const k in Q)st.add[k]=Q[k];if(!st.sel)st.sel=LAST&&LAST.p?LAST.p.n:null;renderAdds();calc()}});
 $("rec").addEventListener("change",e=>{if(e.target.id==="pksel"){st.sel=e.target.value;calc();const s=$("pksel");if(s)s.focus()}});
 $("tbl").addEventListener("click",e=>{const tr=e.target.closest("tr[data-n]");if(tr){st.sel=tr.dataset.n;calc();$("rec").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"})}});
 $("tbl").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-n]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();st.sel=tr.dataset.n;calc()}});
