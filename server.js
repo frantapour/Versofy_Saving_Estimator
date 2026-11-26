@@ -1,7 +1,7 @@
 // Versofy savings calculator: static page + small JSON API for admin settings.
 // Env: PORT, DATABASE_URL (Postgres; without it settings go to ./data/settings.json),
 //      ADMIN_PASSWORD (required to sign in as admin), SESSION_SECRET (keeps sign-ins across restarts),
-//      SALES_PASSWORD (optional: if set, the calculator itself needs this password).
+//      SALES_PASSWORD (required: the team password that opens the calculator).
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -103,7 +103,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, "http://x");
     const sess = readSession(req);
     const ip = (req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
-    const salesOk = !SALES_PASSWORD || (sess && (sess.role === "sales" || sess.role === "admin"));
+    const salesOk = !!SALES_PASSWORD && sess && (sess.role === "sales" || sess.role === "admin");
 
     if (url.pathname === "/health") return send(res, 200, { ok: true });
 
@@ -115,6 +115,7 @@ const server = http.createServer(async (req, res) => {
       if (SALES_PASSWORD && same(pw, SALES_PASSWORD)) return send(res, 303, "", { Location: "/", "Set-Cookie": makeCookie({ role: "sales", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) });
       return send(res, 401, LOGIN_PAGE("That password didn't work."));
     }
+    if (!SALES_PASSWORD) return send(res, 503, url.pathname.startsWith("/api/") ? { error: "not configured" } : "<!DOCTYPE html><title>Not set up</title><p style='font:16px system-ui;padding:40px'>The calculator is locked until the SALES_PASSWORD variable is set in Railway.</p>");
     if (!salesOk) {
       if (url.pathname.startsWith("/api/")) return send(res, 401, { error: "sign in" });
       return send(res, 200, LOGIN_PAGE(""));
@@ -139,7 +140,7 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { role: s.role, name: s.name }, { "Set-Cookie": makeCookie(s, isSecure(req)) });
     }
     if (url.pathname === "/api/logout" && req.method === "POST") {
-      const keep = SALES_PASSWORD ? makeCookie({ role: "sales", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) : "vs=; Path=/; Max-Age=0";
+      const keep = makeCookie({ role: "sales", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req));
       return send(res, 200, { ok: true }, { "Set-Cookie": keep });
     }
     if (url.pathname.startsWith("/api/") && (!sess || sess.role !== "admin")) return send(res, 401, { error: "admin only" });
@@ -161,5 +162,5 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-store.init().then(() => server.listen(PORT, () => console.log(`Versofy calculator on :${PORT}${ADMIN_PASSWORD ? "" : " (ADMIN_PASSWORD not set: admin sign-in disabled)"}`)))
+store.init().then(() => server.listen(PORT, () => console.log(`Versofy calculator on :${PORT}${SALES_PASSWORD ? "" : " (SALES_PASSWORD not set: calculator locked)"}${ADMIN_PASSWORD ? "" : " (ADMIN_PASSWORD not set: admin sign-in disabled)"}`)))
   .catch(e => { console.error("Storage init failed", e); process.exit(1); });

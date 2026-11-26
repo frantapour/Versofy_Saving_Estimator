@@ -3,7 +3,7 @@
 Sales tool that estimates a customer's monthly, 10-year and 20-year savings on a Versofy solar subscription, with add-ons, a customer PDF proposal and admin-managed prices, packages, add-ons and tariffs.
 
 - `public/index.html`: the calculator (single page).
-- `server.js`: serves the page and a small JSON API that stores the admin settings in Postgres.
+- `server.js`: password-protects the app, serves the page and a small JSON API that stores the admin settings in Postgres.
 
 Every quote reads the latest saved settings. The page checks for changes every minute, and again right before each PDF is made. Each PDF shows the date of the settings it used.
 
@@ -15,7 +15,7 @@ Every quote reads the latest saved settings. The page checks for changes every m
    - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (a reference to the database)
    - `ADMIN_PASSWORD`: the password admins use to edit prices and tariffs
    - `SESSION_SECRET`: any long random string, so sign-ins survive redeploys
-   - `SALES_PASSWORD` (optional): if set, the whole calculator asks for this team password first
+   - `SALES_PASSWORD`: the team password everyone types to open the calculator. Without it, the app stays locked.
 4. Under **Settings → Networking**, choose **Generate domain**, or add your own domain.
 5. Set the health check path to `/health` (optional).
 
@@ -25,7 +25,7 @@ To change prices, open the calculator, scroll to the bottom and choose **Admin s
 
 ```
 npm install
-ADMIN_PASSWORD=choose-one npm start
+SALES_PASSWORD=team-pass ADMIN_PASSWORD=admin-pass npm start
 ```
 
 Without `DATABASE_URL`, the settings are saved to `data/settings.json`.
