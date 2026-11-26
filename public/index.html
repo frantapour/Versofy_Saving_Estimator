@@ -48,6 +48,7 @@ details{margin-top:4px}summary{cursor:pointer;font-weight:600;min-height:44px;di
 .res{display:grid;gap:18px}
 .rec{background:var(--green);color:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(18px,2.6vw,28px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 20px;align-items:end}
 .rec .k{font-weight:700;font-size:17px;grid-column:1/-1;color:var(--mint)}
+.ackl{display:flex!important;grid-template-columns:none;gap:10px;align-items:flex-start;border:3px solid var(--yel);background:#fff6d6;color:#121442;border-radius:12px;padding:10px 12px;margin:8px 0;font-size:15px;cursor:pointer}.ackl span{flex:1}.quote .ackl input{flex:0 0 24px!important;width:24px!important;height:24px;min-height:0!important;flex:none;margin:2px 0 0;padding:0}
 .must{border:3px solid var(--yel);background:#fff6d6;color:#121442;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:15px}.must .say{display:block;font:800 20px/1.25 Fraunces,Georgia,serif;margin:6px 0}
 .rec .upsl{margin-top:10px;padding:10px 12px;border:1px dashed currentColor;border-radius:10px;font-size:15px}.rec .invb{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}.rec .upsl button{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}
 .rec .chg{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:15px;font-weight:600;color:inherit}.rec .chg select{min-height:44px;width:auto;max-width:100%;font:inherit;font-weight:700;padding:6px 10px;border-radius:10px;border:1px solid currentColor;background:transparent;color:inherit}.rec .chg option{color:#0b2239;background:#fff}
@@ -186,7 +187,7 @@ a{color:inherit}
   <div class="yrs" id="yrs"></div>
   <div class="panel pts" id="pts"></div>
   <div class="sum" id="sum"></div>
-  <div class="quote"><div class="step" style="margin:0"><b>2</b>Send the customer their estimate</div><label class="lab" for="sname" style="margin-top:8px">Your name (sales)</label><input type="text" id="sname" maxlength="60" placeholder="Saved with the estimate record" autocomplete="name" style="margin-bottom:8px"><div class="row"><button type="button" class="pdfb" id="pdf">Download PDF estimate</button></div><span id="pdfmsg" aria-live="polite" style="font-size:14px;color:var(--mut)">One page for the package shown above, addressed to the customer named at the top, without the sales talking points. When you send it, ask the customer to reply “I understand this is an estimate.”</span></div>
+  <div class="quote"><div class="step" style="margin:0"><b>2</b>Send the customer their estimate</div><label class="lab" for="sname" style="margin-top:8px">Your name (sales)</label><input type="text" id="sname" maxlength="60" placeholder="Saved with the estimate record" autocomplete="name" style="margin-bottom:8px"><div class="row"><label class="ackl"><input type="checkbox" id="ack"> <span><b>The customer confirmed they understand this is an estimate.</b> I asked the question in “What to say to the customer” and they said yes.</span></label><button type="button" class="pdfb" id="pdf">Download PDF estimate</button></div><span id="pdfmsg" aria-live="polite" style="font-size:14px;color:var(--mut)">One page for the package shown above, addressed to the customer named at the top, without the sales talking points. It can only be created after the customer confirms they understand it is an estimate.</span></div>
  </div>
 </div>
 </div></section>
@@ -285,10 +286,12 @@ let ADD=DEF_ADD.map(normA),INV=DEF_INV.map(normI);
 const invUp=(p,to)=>st.ph===1&&p.ph.includes(1)&&to>p.inv?INV.find(r=>r.on&&r.fee>0&&r.from===p.inv&&r.to===to):null;
 const PHL=p=>SUPL[p.sup];
 const addTxt=(a,q)=>a.type==="bat"?`${q} × ${a.n} (${+(a.val*q).toFixed(2)} kWh)`:`${q} × ${a.n} (${a.val*q} panel${a.val*q>1?"s":""})`;
-function withAdd(p,Q){Q=Q||st.add;let kwp=p.kwp,pan=p.pan,bat=p.bat,inv=p.inv,afee=0;const adds=[];const per=p.pan?p.kwp/p.pan:0.46;
+// max PV array (kWp) each Sunsynk inverter accepts, from its datasheet (SG01LP1 single-phase; 12K three-phase SG04LP3)
+const PVMAX={5:6.5,8:10.4,12:15.6,16:20.8};
+function withAdd(p,Q){Q=Q||st.add;const iu0=invUp(p,+Q.invTo||0),invF=iu0?iu0.to:p.inv;let kwp=p.kwp,pan=p.pan,bat=p.bat,inv=p.inv,afee=0;const adds=[];const per=p.pan?p.kwp/p.pan:0.46;
  for(const a of ADD){if(!a.on||!(a.fee>0))continue;const q=Math.min(a.max,Math.max(0,Math.round(Q[a.id]||0)));if(!q)continue;
   if(a.type==="bat"){bat+=a.val*q;afee+=a.fee*q;adds.push(addTxt(a,q))}
-  else if(a.type==="pan"){pan+=a.val*q;kwp+=a.val*q*per;afee+=a.fee*q;adds.push(addTxt(a,q))}
+  else if(a.type==="pan"){const cap=PVMAX[invF]?Math.max(0,Math.floor((PVMAX[invF]-kwp+1e-6)/(a.val*per))):q,qq=Math.min(q,cap);if(!qq)continue;pan+=a.val*qq;kwp+=a.val*qq*per;afee+=a.fee*qq;adds.push(addTxt(a,qq)+(qq<q?` (inverter limit ${PVMAX[invF]} kWp)`:""))}
   }
  const iu=invUp(p,+Q.invTo||0);if(iu){inv=iu.to;afee+=iu.fee;adds.push(`inverter upgrade ${iu.from} to ${iu.to} kW`)}
  return {...p,kwp:+kwp.toFixed(2),pan,bat:+bat.toFixed(2),inv,base:p.fee,afee,fee:p.fee+afee,adds}}
@@ -429,7 +432,7 @@ function calc(){
   cur.n10>=0?`“Over 10 years we estimate you come out about ${R(cur.n10)} ahead.”`:`“Over 10 years, we estimate backup power costs you about ${R(-cur.n10)} in total, about ${R(-cur.n10/120)} a month on average.”`,
   `“The contract ends after 10 years and you can then buy the system for ${R(GEN.buy)}. You keep benefiting for another 10 years: we estimate it still saves about ${R(sav11)} a month in year 11, allowing for the panels and battery slowly losing performance. Over 20 years that is ${cur.n20>=0?"about "+R(cur.n20)+" net in your favour":"a net of "+RS(cur.n20)}. The inverter will be out of warranty by then but should keep working.”`];
  LAST={pk,who:st.who,ph:st.ph,meter:st.meter,p,m,net,neg,bill,t,kwh,yr,n10:cur.n10,n20:cur.n20,cross,sav,sav11,hTxt,d,y,dod,esc:$("esc").value,se:p.esc,pl,isRec,used:m.used};
- $("pts").innerHTML=`<h3>What to say to the customer</h3><div class="must" role="note"><b>Never skip this.</b> Before the customer signs up, point them to the disclaimer on the PDF and ask them to reply in writing:<span class="say">“I understand this is an estimate.”</span>Keep their reply with the reference number on the PDF.</div><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
+ $("pts").innerHTML=`<h3>What to say to the customer</h3><div class="must" role="note"><b>Never skip this. Ask, and wait for a clear yes:</b><span class="say">“These figures are estimates, not a guarantee. Your actual saving can be different. Do you understand that this is an estimate?”</span>Then tick the confirmation box above the PDF button. It is saved with the estimate.</div><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
  $("sum").textContent=`Worked sum: ${K(kwh)} kWh/month at about R${avg.toFixed(2)}/kWh. ${p.kwp} kWp × ${y.toFixed(1)} kWh × 30.4 days = ${K(m.prod)} kWh made; ${K(m.direct)} kWh used in daylight + ${K(m.stored)} kWh from the battery at night. ${K(m.grid)} kWh still from the grid = ${R(m.after)}. ${R(bill)} − ${R(m.after)} − ${R(p.fee)} = ${R(net)}. ${K(m.waste)} kWh of solar not used (no feed-in).`;
  $("tbl").tBodies[0].innerHTML=rows.map(r=>`<tr tabindex="0" data-n="${r.p.n}" class="${r===cur?"sel":""}"><td data-l="Package"><span><span class="pk">${r.p.n}</span>${r===rec?'<span class="tag best">Recommended</span>':""}${r.p.ltd?`<span class="tag ltd">Limited</span>`:""}${!r.fit&&r.net<0?`<div class="sp">Backup option · saves from ${R(r.p.min)}</div>`:""}${!r.ok?`<div class="sp">${r.p.sup==="3"?"Needs three-phase":"Single-phase homes only"}</div>`:""}${r===best&&best!==rec?'<span class="tag big">Biggest saving</span>':""}</span></td><td data-l="System"><span>${r.p.pan} panels, ${r.p.kwp} kWp · ${r.p.inv} kW · ${r.p.bat} kWh<div class="sp">${PHL(r.p)}</div>${r.p.inv<pk.mid?`<div class="sp bk" style="font-weight:600">Inverter below est. ${kw1(pk.mid)} kW peak</div>`:""}</span></td><td class="n" data-l="Fee / month"><span>${R(r.p.fee)}<div class="sp">+${r.p.esc}% a year</div></span></td><td class="n" data-l="Solar used">${K(r.m.used)} kWh</td><td class="n" data-l="Grid bill after">${R(r.m.after)}</td><td class="n ${CM(r.net)}" data-l="Net / month">${RS(r.net)}</td><td class="n ${CM(r.n10)}" data-l="Net, 10 years">${RS(r.n10)}</td><td class="n ${CL(r.n20)}" data-l="Net, 20 years">${RS(r.n20)}</td></tr>`).join("");
  const live=PK.filter(p=>p.ph.includes(st.ph)).slice().sort((a,b)=>a.inv-b.inv||a.fee-b.fee);
@@ -470,7 +473,7 @@ function buildPdf(){
   y=wrap(`Estimated from the first month, after the ${PDFR(p.fee)} subscription. Not guaranteed: see the disclaimer below. You also get backup power: a ${p.bat} kWh battery that can keep lights, Wi-Fi, TV and the fridge (about 500 W) on for ${L.hTxt} when the power goes off.`,M,y+7,W-2*M,{s:10});}
  // acknowledgement
  y+=3;fill([255,246,214]);doc.setDrawColor(253,189,20);doc.setLineWidth(0.8);doc.roundedRect(M,y,W-2*M,9,2,2,"FD");doc.setLineWidth(0.2);
- txt('Important: read the disclaimer below, then reply "I understand this is an estimate" (ref '+ref+').',(W)/2,y+5.8,{s:8.5,b:1,a:"center"});y+=9;
+ txt('You confirmed to '+(($("sname")||{}).value.trim()||"Versofy")+' that you understand this is an estimate. Please read the disclaimer below (ref '+ref+').',W/2,y+5.8,{s:8.5,b:1,a:"center"});y+=9;
  // monthly table
  y+=6;txt("Your monthly bill (estimated)",M,y,{s:12,b:1});y+=3;
  const rowsM=[["Electricity today, as you told us",PDFR(L.bill)],["Estimated grid bill with Versofy",PDFR(m.after)],["Versofy "+p.n+" subscription"+(p.afee?" incl. add-ons ("+PDFR(p.base)+" + "+PDFR(p.afee)+")":""),PDFR(p.fee)],["Estimated total with Versofy",PDFR(m.after+p.fee)],[L.neg?"Estimated price of battery backup":"Estimated net saving each month",L.neg?PDFR(-L.net):PDFR(L.net)]];
@@ -500,14 +503,15 @@ $("pdf").addEventListener("click",async()=>{
  const b=$("pdf"),msg=$("pdfmsg");
  if(REFRESH)await REFRESH();
  if(CFG_STATE==="loading"){msg.textContent="Still loading the latest prices. Try again in a moment.";return}
+ if(!$("ack").checked){msg.textContent="First ask the customer if they understand this is an estimate, then tick the confirmation box.";$("ack").focus();return}
  const doc=buildPdf();if(!doc){msg.textContent="The PDF tool didn't load. Check the internet connection and reload the page.";return}
  const fn="Versofy_estimate_"+(($("cname").value.trim()||LAST.p.n).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")||"customer")+".pdf";
  b.disabled=true;
- if(SAVE_EST){msg.textContent="Saving the record…";try{const L=LAST;await SAVE_EST({ref:L.ref,customer:$("cname").value.trim(),sales:($("sname")||{}).value||"",pdf:doc.output("datauristring").split(",")[1],data:{bill:L.bill,area:L.pl?L.pl.n:"",who:L.who,meter:L.meter,ph:L.ph,tariff:L.t.n,pkg:L.p.n,fee:L.p.fee,adds:L.p.adds,net:Math.round(L.net),n10:Math.round(L.n10),n20:Math.round(L.n20),after:Math.round(L.m.after),esc:L.esc,rec:L.isRec}})}catch(e){msg.textContent="Couldn't save the record of this estimate, so the PDF wasn't created. Check the connection and try again.";b.disabled=false;return}}
+ if(SAVE_EST){msg.textContent="Saving the record…";try{const L=LAST;await SAVE_EST({ref:L.ref,customer:$("cname").value.trim(),sales:($("sname")||{}).value||"",pdf:doc.output("datauristring").split(",")[1],data:{bill:L.bill,area:L.pl?L.pl.n:"",who:L.who,meter:L.meter,ph:L.ph,tariff:L.t.n,pkg:L.p.n,fee:L.p.fee,adds:L.p.adds,net:Math.round(L.net),n10:Math.round(L.n10),n20:Math.round(L.n20),after:Math.round(L.m.after),esc:L.esc,rec:L.isRec,ack:true,ackAt:new Date().toISOString()}})}catch(e){msg.textContent="Couldn't save the record of this estimate, so the PDF wasn't created. Check the connection and try again.";b.disabled=false;return}}
  try{
   const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
-  if(dl){await dl.save({filename:fn,data:doc.output("blob")});msg.textContent="Saved "+fn+". Send it to the customer and ask them to reply “I understand this is an estimate.”"}
-  else{doc.save(fn);msg.textContent="Downloaded "+fn+(SAVE_EST?" (saved as "+LAST.ref+")":"")+". Send it to the customer and ask them to reply “I understand this is an estimate.”"}
+  if(dl){await dl.save({filename:fn,data:doc.output("blob")});msg.textContent="Saved "+fn+". Send it to the customer."}
+  else{doc.save(fn);msg.textContent="Downloaded "+fn+(SAVE_EST?" (saved as "+LAST.ref+")":"")+". Send it to the customer."}
  }catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"Couldn't save the PDF here. Open the calculator in a browser on a computer and try again."}
  b.disabled=false;
 });
@@ -675,7 +679,7 @@ $("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c
 syncChips();
 $("f").addEventListener("submit",e=>e.preventDefault());
 document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
-$("reset").addEventListener("click",()=>{$("cname").value="";st.add={};renderAdds();setTimeout(syncChips);$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",meter:"pre",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
+$("reset").addEventListener("click",()=>{$("cname").value="";$("ack").checked=false;st.add={};renderAdds();setTimeout(syncChips);$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",meter:"pre",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
 try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}st.who=s.who||"muni";st.meter=s.meter==="con"?"con":"pre"}}catch(e){}
 calc();syncChips();
 }
