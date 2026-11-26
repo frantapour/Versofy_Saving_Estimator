@@ -141,6 +141,9 @@ a{color:inherit}
    <div class="seg2" id="who"><button type="button" data-w="muni" id="wMuni">Municipality</button><button type="button" data-w="esk" id="wEsk">Eskom directly</button></div>
    <div class="tinfo" id="tinfo"></div>
    <div class="hint">Not sure? The token slip or bill shows "Eskom" or the city's name.</div></div>
+  <div class="field"><div class="lab">How the customer pays for electricity</div>
+   <div class="seg2" id="meter"><button type="button" data-m="pre">Prepaid meter</button><button type="button" data-m="con">Monthly account (contract)</button></div>
+   <div class="hint" id="meterhint">Prepaid: buys tokens. Monthly account: gets a bill after using the electricity.</div></div>
   <div class="field"><div class="lab">Home's electricity supply</div>
    <div class="seg2" id="ph"><button type="button" data-p="1" aria-pressed="true">Single-phase</button><button type="button" data-p="3" aria-pressed="false">Three-phase</button></div>
    <div class="hint" id="phhint">Most homes are single-phase.</div></div>
@@ -315,15 +318,17 @@ const sum=a=>a.reduce((x,y)=>x+y,0);
 const K=v=>Math.round(v).toLocaleString("en-ZA").replace(/[,  ]/g," ");
 const rateTxt=t=>t.b.length===1?"R"+t.b[0][1].toFixed(2)+" flat":t.b.map((x,i)=>{const lo=i?t.b[i-1][0]:0;return (x[0]>1e8?"over "+lo:(lo?lo+1:0)+"–"+x[0])+" kWh R"+x[1].toFixed(2)}).join(" · ");
 const DAYS=30.4,ETA=0.9;
-const st={add:{},place:PL.find(p=>p.n==="Randburg"),who:"muni",ph:1,sel:null,ovr:""};
+const st={meter:"pre",add:{},place:PL.find(p=>p.n==="Randburg"),who:"muni",ph:1,sel:null,ovr:""};
 $("ovr").innerHTML='<option value="">Automatic (recommended)</option>'+Object.entries(T).map(([k,t])=>`<option value="${k}">${t.n}</option>`).join("");
-const renderTT=()=>{$("tt").tBodies[0].innerHTML=["jhb","tsh","ekh","cpt","dbn","nmb","mng","bcm","eskl","eskp","oth"].map(k=>{const t=T[k];return `<tr><td>${t.s}</td><td><b>${t.n}</b><div class="sp">${t.why}${k==="eskl"?"; used up to R2 000 a month":k==="eskp"?"; used above R2 000 a month":""}</div></td><td>${rateTxt(t)}</td><td class="n">${R(t.fix)}</td></tr>`}).join("")};renderTT();
+const renderTT=()=>{$("tt").tBodies[0].innerHTML=["jhb","jhbc","tsh","ekh","cpt","dbn","nmb","mng","bcm","eskl","eskp","oth"].map(k=>{const t=T[k];return `<tr><td>${t.s}</td><td><b>${t.n}</b><div class="sp">${t.why}${k==="eskl"?"; used for prepaid up to R2 000 a month":k==="eskp"?"; used for monthly accounts, and prepaid above R2 000 a month":k==="jhb"?"; used for prepaid meters":k==="jhbc"?"; used for monthly accounts":""}</div></td><td>${rateTxt(t)}</td><td class="n">${R(t.fix)}</td></tr>`}).join("")};renderTT();
 const cost=(t,kwh)=>{let c=t.fix,lo=0;for(const[up,r]of t.b){if(kwh<=lo)break;c+=(Math.min(kwh,up)-lo)*r;lo=up}return c};
 const kwhFrom=(t,bill)=>{let left=bill-t.fix,lo=0,k=0;if(left<=0)return 0;for(const[up,r]of t.b){const cap=(up-lo)*r;if(left<=cap)return k+left/r;k+=up-lo;left-=cap;lo=up}return k};
+const METER={jhb:{con:"jhbc"}};
+const SPLIT={jhb:1,esk:1};
 function pickTariff(bill){
  if(st.ovr){const t=T[st.ovr];if(st.ovr==="cus"){t.b=[[1e9,+$("flat").value||0]];t.fix=+$("ffix").value||0}return st.ovr}
- if(st.who==="esk")return bill<=2000?"eskl":"eskp";
- return st.place?st.place.m:"oth";
+ if(st.who==="esk")return st.meter==="con"||bill>2000?"eskp":"eskl";
+ const m=st.place?st.place.m:"oth";return (METER[m]||{})[st.meter]||m;
 }
 function model(p,t,kwh,d,y,dod){
  const L=kwh/DAYS,P=p.kwp*y,day=L*d,night=L-day,direct=Math.min(P,day),surplus=P-direct;
@@ -343,7 +348,8 @@ function calc(){
  $("cusbox").hidden=st.ovr!=="cus";
  const pl=st.place,muniName=pl?T[pl.m].s:"Municipality";
  $("wMuni").textContent=pl&&pl.m!=="oth"?muniName:"Municipality";
- $("wMuni").setAttribute("aria-pressed",st.who==="muni");$("wEsk").setAttribute("aria-pressed",st.who==="esk");
+ $("wMuni").setAttribute("aria-pressed",st.who==="muni");for(const b of $("meter").children)b.setAttribute("aria-pressed",b.dataset.m===st.meter);
+ $("meterhint").textContent=st.ovr?"A specific tariff is chosen under Advanced, so this has no effect.":st.who==="esk"?(st.meter==="pre"?(bill<=2000?"Eskom Homelight used: the usual prepaid tariff.":"Eskom Homepower used: prepaid homes spending over R2 000 a month are usually on it."):"Eskom Homepower used: the standard tariff for monthly accounts."):SPLIT[pl?pl.m:"oth"]?(st.meter==="pre"?"Prepaid tariff used. Switch if the customer gets a monthly bill.":"Monthly account tariff used, including its higher fixed charge."):"This supplier charges the same rates for prepaid and monthly accounts.";$("wEsk").setAttribute("aria-pressed",st.who==="esk");
  for(const b of $("ph").children)b.setAttribute("aria-pressed",+b.dataset.p===st.ph);
  const kwh=kwhFrom(t,bill),avg=kwh?(bill-t.fix)/kwh:0;
  $("tinfo").innerHTML=`<b>Tariff used: ${t.n}</b>${rateTxt(t)} + ${R(t.fix)}/month fixed. About ${K(kwh)} kWh a month at this spend.`+(t.flag?`<div class="warn">${t.flag}</div>`:"")+(pl&&pl.e&&st.who==="muni"?`<div class="warn">Parts of ${pl.n} buy directly from Eskom: confirm with the customer.</div>`:"")+(pl?`<div class="sp">${pl.n}, ${PN[pl.p]} · solar yield ${Y[pl.p]} kWh/kWp/day</div>`:"");
@@ -373,11 +379,11 @@ function calc(){
   cross>0&&cross<10?`“Electricity tariffs go up about ${$("esc").value}% a year; the subscription goes up ${p.esc}% a year. From year ${cross+1} your saving is bigger than the fee.”`:`“Electricity tariffs go up about ${$("esc").value}% a year; the subscription ${p.esc}% a year, so the saving grows faster than the fee.”`,
   cur.n10>=0?`“Over 10 years you come out about ${R(cur.n10)} ahead.”`:`“Over 10 years, backup power costs you about ${R(-cur.n10)} in total, about ${R(-cur.n10/120)} a month on average.”`,
   `“After 10 years the subscription ends and the system is yours. By then it saves about ${R(sav11)} a month on the grid bill: ${cur.n20>=0?"about "+R(cur.n20)+" net in your favour":"a net of "+RS(cur.n20)} over 20 years.”`];
- LAST={p,m,net,neg,bill,t,kwh,yr,n10:cur.n10,n20:cur.n20,cross,sav,sav11,hTxt,d,y,dod,esc:$("esc").value,se:p.esc,pl,isRec,used:m.used};
+ LAST={meter:st.meter,p,m,net,neg,bill,t,kwh,yr,n10:cur.n10,n20:cur.n20,cross,sav,sav11,hTxt,d,y,dod,esc:$("esc").value,se:p.esc,pl,isRec,used:m.used};
  $("pts").innerHTML=`<h3>What to say to the customer</h3><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
  $("sum").textContent=`Worked sum: ${K(kwh)} kWh/month at about R${avg.toFixed(2)}/kWh. ${p.kwp} kWp × ${y.toFixed(1)} kWh × 30.4 days = ${K(m.prod)} kWh made; ${K(m.direct)} kWh used in daylight + ${K(m.stored)} kWh from the battery at night. ${K(m.grid)} kWh still from the grid = ${R(m.after)}. ${R(bill)} − ${R(m.after)} − ${R(p.fee)} = ${R(net)}. ${K(m.waste)} kWh of solar not used (no feed-in).`;
  $("tbl").tBodies[0].innerHTML=rows.map(r=>`<tr tabindex="0" data-n="${r.p.n}" class="${r===cur?"sel":""}"><td data-l="Package"><span><span class="pk">${r.p.n}</span>${r===rec?'<span class="tag best">Recommended</span>':""}${r.p.ltd?`<span class="tag ltd">Limited</span>`:""}${!r.fit?`<div class="sp">Versofy: bills above ${R(r.p.min)}</div>`:""}${!r.ok?`<div class="sp">Needs three-phase</div>`:""}</span></td><td data-l="System"><span>${r.p.pan} panels, ${r.p.kwp} kWp · ${r.p.inv} kW · ${r.p.bat} kWh<div class="sp">${PHL(r.p)}</div></span></td><td class="n" data-l="Fee / month"><span>${R(r.p.fee)}<div class="sp">+${r.p.esc}% a year</div></span></td><td class="n" data-l="Solar used">${K(r.m.used)} kWh</td><td class="n" data-l="Grid bill after">${R(r.m.after)}</td><td class="n ${CM(r.net)}" data-l="Net / month">${RS(r.net)}</td><td class="n ${CM(r.n10)}" data-l="Net, 10 years">${RS(r.n10)}</td><td class="n ${CL(r.n20)}" data-l="Net, 20 years">${RS(r.n20)}</td></tr>`).join("");
- try{localStorage.setItem("vsf-calc2",JSON.stringify({bill:$("bill").value,loc:st.place&&st.place.n,who:st.who,ph:st.ph,day:$("day").value}))}catch(e){}
+ try{localStorage.setItem("vsf-calc2",JSON.stringify({bill:$("bill").value,loc:st.place&&st.place.n,who:st.who,meter:st.meter,ph:st.ph,day:$("day").value}))}catch(e){}
 }
 
 const DISC=["This is an estimate, not a quote or an offer. It is based only on the information the customer gave us: their average monthly electricity spend, suburb or town, electricity supplier and type of supply. We have not checked this information.", "The figures come from a simplified model. It uses year-round average solar output, an assumed daytime share of use and fixed yearly increases, so actual savings will vary with weather, usage, the installation and future tariff changes.", "Versofy does not determine which tariff the customer is on. The calculator uses the tariff a standalone home with this supplier is most likely to be on, at published 2026/27 rates incl. VAT. We cannot confirm that these rates match the customer's own tariff or bill, and the results will differ if they do not.", "Final figures depend on a site assessment and the signed Versofy subscription agreement."];
@@ -431,7 +437,7 @@ function buildPdf(){
  y+=CH+(L.cross>0&&L.cross<10?20:15);
  // assumptions
  txt("How we worked it out",M,y,{s:10,b:1});
- const as=[`Tariff: ${L.t.n}${L.pl?" ("+L.pl.n+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
+ const as=[`Tariff: ${L.t.n}${L.pl?" ("+L.pl.n+", "+(L.meter==="con"?"monthly account":"prepaid")+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
   `Solar: ${p.kwp} kWp at ${L.y.toFixed(1)} kWh per kWp a day, ${Math.round(L.d*100)}% of use in daylight, ${Math.round(L.dod*100)}% of the battery used each night. About ${K(L.used)} kWh of solar used a month. No credit for surplus solar.`,
   `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year and ends after year 10. Panel output falls 0.5% a year.`,
   `Backup time assumes about 500 W of essentials. Upkeep and battery replacement after year 10 are not included, and amounts are not adjusted for inflation.`];
@@ -570,6 +576,7 @@ function suggest(){
 $("loc").addEventListener("input",suggest);
 $("loc").addEventListener("focus",e=>e.target.select());
 $("loc").addEventListener("keydown",e=>{const bs=[...$("sugg").children];if($("sugg").hidden||!bs.length)return;if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();hi=(hi+(e.key==="ArrowDown"?1:bs.length-1))%bs.length;bs.forEach((b,i)=>b.className=i===hi?"on":"")}if(e.key==="Enter"){e.preventDefault();bs[hi].click()}if(e.key==="Escape")$("sugg").hidden=true});
+$("meter").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.meter=b.dataset.m;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
 $("who").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.who=b.dataset.w;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
 $("ph").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.ph=+b.dataset.p;st.sel=null;calc()}});
 $("ovr").addEventListener("change",e=>{st.ovr=e.target.value;calc()});
@@ -583,8 +590,8 @@ $("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c
 syncChips();
 $("f").addEventListener("submit",e=>e.preventDefault());
 document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
-$("reset").addEventListener("click",()=>{$("cname").value="";st.add={};renderAdds();setTimeout(syncChips);$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
-try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}st.who=s.who||"muni"}}catch(e){}
+$("reset").addEventListener("click",()=>{$("cname").value="";st.add={};renderAdds();setTimeout(syncChips);$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",meter:"pre",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
+try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}st.who=s.who||"muni";st.meter=s.meter==="con"?"con":"pre"}}catch(e){}
 calc();syncChips();
 }
 </script>
