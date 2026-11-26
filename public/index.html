@@ -48,6 +48,7 @@ details{margin-top:4px}summary{cursor:pointer;font-weight:600;min-height:44px;di
 .res{display:grid;gap:18px}
 .rec{background:var(--green);color:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(18px,2.6vw,28px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 20px;align-items:end}
 .rec .k{font-weight:700;font-size:17px;grid-column:1/-1;color:var(--mint)}
+.must{border:3px solid var(--yel);background:#fff6d6;color:#121442;border-radius:12px;padding:12px 14px;margin:0 0 12px;font-size:15px}.must .say{display:block;font:800 20px/1.25 Fraunces,Georgia,serif;margin:6px 0}
 .rec .upsl{margin-top:10px;padding:10px 12px;border:1px dashed currentColor;border-radius:10px;font-size:15px}.rec .invb{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}.rec .upsl button{margin-left:6px;min-height:40px;padding:6px 14px;border-radius:99px;border:0;background:var(--yel);color:var(--navy);font-weight:700;cursor:pointer}
 .rec .chg{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:15px;font-weight:600;color:inherit}.rec .chg select{min-height:44px;width:auto;max-width:100%;font:inherit;font-weight:700;padding:6px 10px;border-radius:10px;border:1px solid currentColor;background:transparent;color:inherit}.rec .chg option{color:#0b2239;background:#fff}
 .rec .nm{font:800 clamp(56px,9vw,96px)/.95 Fraunces,Georgia,serif;letter-spacing:-.02em;overflow-wrap:anywhere;color:var(--yel)}
@@ -185,7 +186,7 @@ a{color:inherit}
   <div class="yrs" id="yrs"></div>
   <div class="panel pts" id="pts"></div>
   <div class="sum" id="sum"></div>
-  <div class="quote"><div class="step" style="margin:0"><b>2</b>Send the customer their estimate</div><div class="row"><button type="button" class="pdfb" id="pdf">Download PDF estimate</button></div><span id="pdfmsg" aria-live="polite" style="font-size:14px;color:var(--mut)">One page for the package shown above, addressed to the customer named at the top, without the sales talking points.</span></div>
+  <div class="quote"><div class="step" style="margin:0"><b>2</b>Send the customer their estimate</div><label class="lab" for="sname" style="margin-top:8px">Your name (sales)</label><input type="text" id="sname" maxlength="60" placeholder="Saved with the estimate record" autocomplete="name" style="margin-bottom:8px"><div class="row"><button type="button" class="pdfb" id="pdf">Download PDF estimate</button></div><span id="pdfmsg" aria-live="polite" style="font-size:14px;color:var(--mut)">One page for the package shown above, addressed to the customer named at the top, without the sales talking points. When you send it, ask the customer to reply “I understand this is an estimate.”</span></div>
  </div>
 </div>
 </div></section>
@@ -209,7 +210,7 @@ a{color:inherit}
 <p class="lede" style="margin-bottom:8px"><button type="button" class="abtn sm" id="a_out" style="float:right">Sign out</button>Only signed-in admins see this. Saved changes apply straight away to every quote and PDF, for everyone using the calculator.</p>
 <p class="sp" id="alast"></p>
 <h3>General</h3>
-<div class="agen"><label class="field"><span class="lab">Yearly tariff increase, default %</span><input type="number" id="a_tesc" step="0.5" min="0" max="25"></label>
+<div class="agen"><label class="field"><span class="lab">Yearly tariff increase, default %</span><input type="number" id="a_tesc" step="0.5" min="0" max="25"></label><label class="field"><span class="lab">Panel output loss, % a year</span><input type="number" id="a_pdeg" step="0.1" min="0" max="5"></label><label class="field"><span class="lab">Battery capacity loss, % a year</span><input type="number" id="a_bdeg" step="0.1" min="0" max="10"></label><label class="field"><span class="lab">Buy-out price after year 10, R</span><input type="number" id="a_buy" step="1" min="0"></label>
 <label class="field"><span class="lab">Prices effective from</span><input type="text" id="a_pdate" maxlength="40" placeholder="e.g. 30 November 2026"></label>
 <label class="field"><span class="lab">Tariffs valid for</span><input type="text" id="a_tyear" maxlength="20" placeholder="e.g. 2026/27"></label></div>
 <h3>Packages</h3>
@@ -233,6 +234,7 @@ a{color:inherit}
 <div class="arow"><button type="button" class="abtn sm" id="a_mt">Add a municipal tariff</button><label class="abtn sm" style="display:inline-flex;align-items:center">Import CSV<input type="file" id="a_csv" accept=".csv,text/csv" hidden></label><button type="button" class="abtn sm" id="a_csvout">Download as CSV</button></div>
 <p class="sp" style="margin:-6px 0 12px">CSV columns: municipality, applies_to (both, prepaid or monthly), tariff_name, fixed_per_month, rates, warning, source. Amounts incl. VAT. Importing replaces the rows above; save to apply.</p>
 <div class="arow"><button type="button" class="abtn pri" id="a_save">Save for everyone</button><button type="button" class="abtn" id="a_undo">Discard changes</button><button type="button" class="abtn" id="a_def">Load built-in values</button><span class="amsg" id="a_msg" aria-live="polite"></span></div>
+<h3 style="margin-top:18px">Estimates issued</h3><p class="sp" style="margin:0 0 8px">Every PDF estimate is saved here with its reference number and date. Search by reference, customer or sales name.</p><div class="arow" style="margin:0 0 8px"><input type="text" id="a_eq" placeholder="e.g. VS-20261126 or Dlamini" style="max-width:320px"><button type="button" class="abtn sm" id="a_es">Search</button></div><div class="scroll"><table id="aest"><thead><tr><th>Date</th><th>Reference</th><th>Customer</th><th>Sales</th><th>Package</th><th class="n">Bill</th><th class="n">Net / month</th><th>PDF</th></tr></thead><tbody><tr><td colspan="8">Loading</td></tr></tbody></table></div>
 <h3 style="margin-top:18px">Recent changes</h3><ol class="ylog" id="a_log"><li>None yet.</li></ol>
 </div></section>
 
@@ -241,7 +243,7 @@ a{color:inherit}
 <p class="lede" style="margin-bottom:12px">One tariff per supplier: the one a standalone, non-indigent home is most likely on, <span id="tyr">2026/27</span>, incl. VAT. Across suppliers a unit costs roughly R3.30 to R5.10. All 205 local municipalities can be searched; until an admin loads a municipality's own tariff, it uses the typical municipal estimate.</p>
 <div class="scroll"><table class="tt" id="tt"><thead><tr><th>Supplier</th><th>Tariff used, and why</th><th>Energy rate per kWh</th><th class="n">Fixed / month</th></tr></thead><tbody></tbody></table></div>
 <div class="notes" style="margin-top:28px">
- <div><h3>How the saving is worked out</h3><p>Monthly kWh is backed out of the spend through the tariff's price blocks. Solar covers daytime use directly; leftover solar charges the battery, which covers evening use up to its usable size. Surplus is not credited (no feed-in). Peak use is estimated from the average load (monthly kWh ÷ 730 hours) as 1.5 kW plus 2.8 × the average, ±20%: a typical home's evening peak with a geyser, stove and kettle. A site assessment measures the real figure. The grid bill is re-priced on what is left, then the Versofy fee is added. The recommendation follows Versofy's published guide: the package with the highest "suitable for bills above" level the bill reaches, from those that suit the home's supply (three-phase homes: PLUS 3P or SUPERCHARGE). While a limited deal runs (to the date in its note), it is recommended from its own level upwards. Below every level, it picks the lowest-cost package. If another package gives a clearly bigger estimated saving, the calculator says so. Sales can change the package at any time.</p><p style="margin-top:8px">Long term: the grid saving rises with the yearly tariff increase, less 0.5% a year for panel ageing; the fee rises with the subscription increase. Years 1 to 10 are saving minus fee. From year 11 the subscription ends and the customer keeps the system, so the whole grid saving counts.</p></div>
+ <div><h3>How the saving is worked out</h3><p>Monthly kWh is backed out of the spend through the tariff's price blocks. Solar covers daytime use directly; leftover solar charges the battery, which covers evening use up to its usable size. Surplus is not credited (no feed-in). Peak use is estimated from the average load (monthly kWh ÷ 730 hours) as 1.5 kW plus 2.8 × the average, ±20%: a typical home's evening peak with a geyser, stove and kettle. A site assessment measures the real figure. The grid bill is re-priced on what is left, then the Versofy fee is added. The recommendation follows Versofy's published guide: the package with the highest "suitable for bills above" level the bill reaches, from those that suit the home's supply (three-phase homes: PLUS 3P or SUPERCHARGE). While a limited deal runs (to the date in its note), it is recommended from its own level upwards. Below every level, it picks the lowest-cost package. If another package gives a clearly bigger estimated saving, the calculator says so. Sales can change the package at any time.</p><p style="margin-top:8px">Long term: each year the model is re-run with panel output and battery capacity reduced by the ageing rates set in admin (default 0.5% and 2.5% a year), and the grid saving rises with the yearly tariff increase; the fee rises with the subscription increase. Years 1 to 10 are saving minus fee. The contract ends after year 10 and the customer can buy the system for the buy-out price (default R1); from year 11 the whole grid saving counts. The inverter is out of warranty by then but assumed to keep working.</p></div>
  <div><h3>What it leaves out</h3><ul><li>Winter output is roughly 25–30% below summer; figures are year-round averages.</li><li>The value of backup power. When the monthly figure is negative, it is shown as the price of backup instead.</li><li>After year 10: upkeep and a battery replacement (batteries often last 10 to 15 years) are the customer's cost.</li><li>Maintenance, insurance and monitoring in the subscription.</li><li>Indigent, lifeline and time-of-use tariffs.</li></ul></div>
  <div><h3>Sources</h3><ul>
   <li><a href="https://www.versofy.energy/">versofy.energy</a> package specs; monthly fees from the Versofy launch price list, effective 30 November 2026</li>
@@ -272,7 +274,7 @@ const DEF_INV=[[5,8],[5,12],[5,16],[8,12],[8,16],[12,16]].map(([f,t])=>({from:f,
 const normI=r=>({from:num(r.from,1,100,5),to:num(r.to,1,100,8),fee:num(r.fee,0,1e5,0),on:r.on!==false});
 const ATYP={bat:["Battery","kWh each"],pan:["Panels","panels each"]};
 const normA=a=>{const type=ATYP[a.type]?a.type:"bat";return {id:clean(a.id,30).replace(/[^A-Za-z0-9_-]/g,"")||"a"+Math.random().toString(36).slice(2,8),n:clean(a.n,40)||"Add-on",type,val:num(a.val,0,200,0),fee:num(a.fee,0,1e5,0),max:type==="inv"?1:Math.round(num(a.max,1,50,1)),on:a.on!==false}};
-const DEF_GEN={tesc:9,pdate:"30 November 2026",tyear:"2026/27",asOf:"26 November 2026"};
+const DEF_GEN={tesc:9,pdeg:0.5,bdeg:2.5,buy:1,pdate:"30 November 2026",tyear:"2026/27",asOf:"26 November 2026"};
 const SUPL={"1":"Single-phase only","13":"Single or three-phase","3":"Three-phase only"};
 const clean=(v,n=120)=>String(v??"").replace(/[<>&"'`]/g,"").slice(0,n);
 const num=(v,lo,hi,d)=>{const x=+v;return Number.isFinite(x)?Math.min(hi,Math.max(lo,x)):d};
@@ -344,7 +346,8 @@ const RS=v=>(Math.round(v)>0?"+":"")+R(v);
 const CL=v=>Math.round(v)>=0?"pos":"neg";
 const CM=v=>Math.round(v)>=0?"pos":"bk";
 const DEG=0.005,ESS=0.5;let LAST=null;
-const proj=(sav,fee,esc,se)=>Array.from({length:20},(_,i)=>12*(sav*((1+esc)*(1-DEG))**i-(i<10?fee*(1+se)**i:0)));
+// yearly net: panels lose GEN.pdeg% and the battery GEN.bdeg% of capacity a year; tariffs rise esc; fee rises se for 10 years; buy-out at the end of year 10
+const projX=(p,t,kwh,d,y,dod,bill,esc,se)=>{const g=[],yr=[];for(let i=0;i<20;i++){const q={...p,kwp:p.kwp*(1-GEN.pdeg/100)**i,bat:p.bat*(1-GEN.bdeg/100)**i},a=model(q,t,kwh,d,y,dod).after,sv=(bill-a)*(1+esc)**i;g.push(sv);yr.push(12*(sv-(i<10?p.fee*(1+se)**i:0))-(i===10?GEN.buy:0))}return {g,yr}};
 const sum=a=>a.reduce((x,y)=>x+y,0);
 const K=v=>Math.round(v).toLocaleString("en-ZA").replace(/[,  ]/g," ");
 const rateTxt=t=>t.b.length===1?"R"+t.b[0][1].toFixed(2)+" flat":t.b.map((x,i)=>{const lo=i?t.b[i-1][0]:0;return (x[0]>1e8?"over "+lo:(lo?lo+1:0)+"–"+x[0])+" kWh R"+x[1].toFixed(2)}).join(" · ");
@@ -388,7 +391,7 @@ function calc(){
  for(const b of $("ph").children)b.setAttribute("aria-pressed",+b.dataset.p===st.ph);
  const kwh=kwhFrom(t,bill),avg=kwh?(bill-t.fix)/kwh:0,pk=peakKW(kwh);
  $("tinfo").innerHTML=`<b>Tariff used: ${t.n}</b>${rateTxt(t)} + ${R(t.fix)}/month fixed. About ${K(kwh)} kWh a month at this spend.`+(t.flag?`<div class="warn">${t.flag}</div>`:"")+(pl&&pl.e&&st.who==="muni"?`<div class="warn">Parts of ${pl.n} buy directly from Eskom: confirm with the customer.</div>`:"")+(pl&&pl.mun&&st.who==="muni"&&tk==="oth"?`<div class="warn">We couldn't confirm a 2026/27 tariff for ${pl.mun} yet, so this is a typical municipal estimate. Many homes here buy from Eskom directly: check the bill.</div>`:"")+(pl?`<div class="sp">${pl.n}${pl.mun&&!pl.n.startsWith(pl.mun)?" ("+pl.mun+")":""}, ${PN[pl.p]} · solar yield ${Y[pl.p]} kWh/kWp/day</div>`:"");
- const rows=PK.map(p=>withAdd(p)).map(p=>{const m=model(p,t,kwh,d,y,dod),net=bill-m.after-p.fee,yr=proj(bill-m.after,p.fee,esc,p.esc/100);return {p,m,net,yr,n10:sum(yr.slice(0,10)),n20:sum(yr),ok:p.ph.includes(st.ph),fit:bill>=p.min}});
+ const rows=PK.map(p=>withAdd(p)).map(p=>{const m=model(p,t,kwh,d,y,dod),net=bill-m.after-p.fee,px=projX(p,t,kwh,d,y,dod,bill,esc,p.esc/100),yr=px.yr;return {p,m,net,yr,g:px.g,n10:sum(yr.slice(0,10)),n20:sum(yr),ok:p.ph.includes(st.ph),fit:bill>=p.min}});
  const tp=PK.filter(p=>p.ph.includes(3)).map(p=>p.n);$("phhint").textContent="Most homes are single-phase."+(tp.length?" Three-phase homes: "+tp.join(", ")+" only.":"");
  const okr=rows.filter(r=>r.ok);
  if(!okr.length){$("rec").className="rec alt";$("rec").innerHTML='<div class="k">No package available</div><div class="spec">No package is set up for this supply. Ask an admin to check the package list.</div>';$("tbl").tBodies[0].innerHTML="";LAST=null;return}
@@ -409,7 +412,7 @@ function calc(){
  $("rec").className="rec"+(isRec?"":" alt");
  $("rec").innerHTML=`<div class="k">${isRec?"Recommended package":"Chosen package · recommended is "+rec.p.n+' · <button type="button" id="back">Show recommended</button>'}</div><label class="chg">Change package <select id="pksel">${rows.map(r=>`<option value="${r.p.n.replace(/[&"<>]/g,"")}" ${r===cur?"selected":""} ${r.ok?"":"disabled"}>${r.p.n.replace(/[&"<>]/g,"")}${r===rec?" (recommended)":""}${r.ok?"":" (not for this supply)"}</option>`).join("")}</select></label><div class="nm">${p.n}</div><div class="fee">${R(p.fee)}<small>per month${p.afee?" incl. "+R(p.afee)+" add-ons":""}</small></div><div class="spec">${p.pan} panels (${p.kwp} kWp) · ${p.inv} kW inverter · ${p.bat} kWh battery${p.adds.length?`<div style="font-size:15px;font-weight:600;color:var(--mint)">With ${p.adds.join(", ")}</div>`:""}</div><div class="why">${isRec?why:(cur.fit||cur.net>=0?"":"Saves money from a bill of about "+R(p.min)+"; below that it is a backup option. ")+(cur.ok?"":(p.sup==="3"?"Needs a three-phase supply. ":"For single-phase homes only. "))+(p.ltd||"")}${p.inv<pk.mid?`<div style="margin-top:6px;font-weight:700;color:var(--yel)">Estimated peak use of about ${kw1(pk.mid)} kW is above the ${p.inv} kW inverter. Fine for backing up essentials; for the whole home during outages, a bigger inverter is safer.${(()=>{const b0=PK.find(x=>x.n===p.n);if(!b0)return "";const u=INV.filter(r=>r.on&&r.fee>0&&r.from===b0.inv&&r.to>=pk.mid&&st.ph===1&&b0.ph.includes(1)).sort((a,b)=>a.to-b.to)[0];return u&&p.inv<u.to?` <button type="button" class="invb" data-inv="${u.to}">Upgrade to ${u.to} kW (+${R(u.fee)}/month)</button>`:""})()}</div>`:""}${ups}</div>`;
  const neg=Math.round(net)<0,sav=bill-m.after,hrs=Math.round(p.bat*dod/ESS),hTxt=hrs>24?"more than a day":"about "+hrs+" hours";
- const yr=cur.yr,cross=yr.findIndex(x=>x>0),sav11=sav*((1+esc)*(1-DEG))**10;
+ const yr=cur.yr,cross=yr.findIndex(x=>x>0),sav11=cur.g[10];
  const v=$("net");v.textContent=neg?"Battery backup for "+R(-net)+" a month":"Saves "+R(net)+" a month";v.className="verdict "+(neg?"bk":"pos");
  $("netsub").textContent=neg?`The solar takes ${R(sav)} off the grid bill, which pays for most of the ${R(p.fee)} subscription. The ${R(-net)} extra is the effective price of backup power: a ${p.bat} kWh battery that runs essentials for ${hTxt} in an outage.`:`after the ${R(p.fee)} subscription. Grid bill drops from ${R(bill)} to ${R(m.after)}, and the home gets backup power.`;
  const H=Math.max(bill,m.after+p.fee,1),fx=Math.min(t.fix,bill);
@@ -424,9 +427,9 @@ function calc(){
   neg?`“The roughly ${R(-net)} a month on top is what you pay for backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${hTxt} when the power goes off.”`:`“You also get backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${hTxt} when the power goes off.”`,
   cross>0&&cross<10?`“If electricity tariffs keep rising about ${$("esc").value}% a year, and the subscription rises ${p.esc}% a year, your saving should be bigger than the fee from about year ${cross+1}.”`:`“If electricity tariffs keep rising about ${$("esc").value}% a year, faster than the subscription's ${p.esc}%, your saving should grow over time.”`,
   cur.n10>=0?`“Over 10 years we estimate you come out about ${R(cur.n10)} ahead.”`:`“Over 10 years, we estimate backup power costs you about ${R(-cur.n10)} in total, about ${R(-cur.n10/120)} a month on average.”`,
-  `“After 10 years the subscription ends and the system is yours. By then we estimate it saves about ${R(sav11)} a month on the grid bill: ${cur.n20>=0?"about "+R(cur.n20)+" net in your favour":"a net of "+RS(cur.n20)} over 20 years.”`];
+  `“The contract ends after 10 years and you can then buy the system for ${R(GEN.buy)}. You keep benefiting for another 10 years: we estimate it still saves about ${R(sav11)} a month in year 11, allowing for the panels and battery slowly losing performance. Over 20 years that is ${cur.n20>=0?"about "+R(cur.n20)+" net in your favour":"a net of "+RS(cur.n20)}. The inverter will be out of warranty by then but should keep working.”`];
  LAST={pk,who:st.who,ph:st.ph,meter:st.meter,p,m,net,neg,bill,t,kwh,yr,n10:cur.n10,n20:cur.n20,cross,sav,sav11,hTxt,d,y,dod,esc:$("esc").value,se:p.esc,pl,isRec,used:m.used};
- $("pts").innerHTML=`<h3>What to say to the customer</h3><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
+ $("pts").innerHTML=`<h3>What to say to the customer</h3><div class="must" role="note"><b>Never skip this.</b> Before the customer signs up, point them to the disclaimer on the PDF and ask them to reply in writing:<span class="say">“I understand this is an estimate.”</span>Keep their reply with the reference number on the PDF.</div><ol>${pts.map(x=>`<li>${x}</li>`).join("")}</ol><div class="sp">Backup time assumes about 500 W of essentials and ${Math.round(dod*100)}% of the battery used. Figures are estimates based only on what the customer told you, not a quote; see the disclaimer below.</div>`;
  $("sum").textContent=`Worked sum: ${K(kwh)} kWh/month at about R${avg.toFixed(2)}/kWh. ${p.kwp} kWp × ${y.toFixed(1)} kWh × 30.4 days = ${K(m.prod)} kWh made; ${K(m.direct)} kWh used in daylight + ${K(m.stored)} kWh from the battery at night. ${K(m.grid)} kWh still from the grid = ${R(m.after)}. ${R(bill)} − ${R(m.after)} − ${R(p.fee)} = ${R(net)}. ${K(m.waste)} kWh of solar not used (no feed-in).`;
  $("tbl").tBodies[0].innerHTML=rows.map(r=>`<tr tabindex="0" data-n="${r.p.n}" class="${r===cur?"sel":""}"><td data-l="Package"><span><span class="pk">${r.p.n}</span>${r===rec?'<span class="tag best">Recommended</span>':""}${r.p.ltd?`<span class="tag ltd">Limited</span>`:""}${!r.fit&&r.net<0?`<div class="sp">Backup option · saves from ${R(r.p.min)}</div>`:""}${!r.ok?`<div class="sp">${r.p.sup==="3"?"Needs three-phase":"Single-phase homes only"}</div>`:""}${r===best&&best!==rec?'<span class="tag big">Biggest saving</span>':""}</span></td><td data-l="System"><span>${r.p.pan} panels, ${r.p.kwp} kWp · ${r.p.inv} kW · ${r.p.bat} kWh<div class="sp">${PHL(r.p)}</div>${r.p.inv<pk.mid?`<div class="sp bk" style="font-weight:600">Inverter below est. ${kw1(pk.mid)} kW peak</div>`:""}</span></td><td class="n" data-l="Fee / month"><span>${R(r.p.fee)}<div class="sp">+${r.p.esc}% a year</div></span></td><td class="n" data-l="Solar used">${K(r.m.used)} kWh</td><td class="n" data-l="Grid bill after">${R(r.m.after)}</td><td class="n ${CM(r.net)}" data-l="Net / month">${RS(r.net)}</td><td class="n ${CM(r.n10)}" data-l="Net, 10 years">${RS(r.n10)}</td><td class="n ${CL(r.n20)}" data-l="Net, 20 years">${RS(r.n20)}</td></tr>`).join("");
  const live=PK.filter(p=>p.ph.includes(st.ph)).slice().sort((a,b)=>a.inv-b.inv||a.fee-b.fee);
@@ -445,7 +448,7 @@ function buildPdf(){
  const col=c=>doc.setTextColor(...c),fill=c=>doc.setFillColor(...c);
  const txt=(t,x,y,o={})=>{doc.setFont("helvetica",o.b?"bold":"normal");doc.setFontSize(o.s||10);col(o.c||N);doc.text(A(t),x,y,o.a?{align:o.a}:undefined)};
  const wrap=(t,x,y,w,o={})=>{doc.setFont("helvetica",o.b?"bold":"normal");doc.setFontSize(o.s||10);col(o.c||N);const ls=doc.splitTextToSize(A(t),w);doc.text(ls,x,y);return y+ls.length*(o.s||10)*0.42};
- const ref="VS-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,6).toUpperCase(),name=$("cname").value.trim(),today=new Date().toLocaleDateString("en-ZA",{day:"numeric",month:"long",year:"numeric"});
+ const ref=L.ref="VS-"+new Date().toISOString().slice(0,10).replace(/-/g,"")+"-"+Math.random().toString(36).slice(2,8).toUpperCase(),name=$("cname").value.trim(),today=new Date().toLocaleDateString("en-ZA",{day:"numeric",month:"long",year:"numeric"});
  // header
  fill(G);doc.rect(0,0,W,34,"F");
  txt("Versofy solar savings estimate",M,15,{s:20,b:1,c:[255,255,255]});txt("ESTIMATE ONLY - NOT A QUOTE OR OFFER",W-M,15,{s:8.5,b:1,c:[255,255,255],a:"right"});
@@ -465,30 +468,24 @@ function buildPdf(){
   y=wrap(`We estimate the solar takes about ${PDFR(L.sav)} a month off your grid bill, which pays for most of the ${PDFR(p.fee)} subscription. The extra of about ${PDFR(-L.net)} is the effective price of backup power: a ${p.bat} kWh battery that can keep lights, Wi-Fi, TV and the fridge (about 500 W) on for ${L.hTxt} when the power goes off. Not guaranteed: see the disclaimer below.`,M,y+7,W-2*M,{s:10});}
  else{txt("Estimated saving: "+PDFR(L.net)+" a month",M,y,{s:18,b:1,c:Gd});
   y=wrap(`Estimated from the first month, after the ${PDFR(p.fee)} subscription. Not guaranteed: see the disclaimer below. You also get backup power: a ${p.bat} kWh battery that can keep lights, Wi-Fi, TV and the fridge (about 500 W) on for ${L.hTxt} when the power goes off.`,M,y+7,W-2*M,{s:10});}
+ // acknowledgement
+ y+=3;fill([255,246,214]);doc.setDrawColor(253,189,20);doc.setLineWidth(0.8);doc.roundedRect(M,y,W-2*M,9,2,2,"FD");doc.setLineWidth(0.2);
+ txt('Important: read the disclaimer below, then reply "I understand this is an estimate" (ref '+ref+').',(W)/2,y+5.8,{s:8.5,b:1,a:"center"});y+=9;
  // monthly table
  y+=6;txt("Your monthly bill (estimated)",M,y,{s:12,b:1});y+=3;
  const rowsM=[["Electricity today, as you told us",PDFR(L.bill)],["Estimated grid bill with Versofy",PDFR(m.after)],["Versofy "+p.n+" subscription"+(p.afee?" incl. add-ons ("+PDFR(p.base)+" + "+PDFR(p.afee)+")":""),PDFR(p.fee)],["Estimated total with Versofy",PDFR(m.after+p.fee)],[L.neg?"Estimated price of battery backup":"Estimated net saving each month",L.neg?PDFR(-L.net):PDFR(L.net)]];
  rowsM.forEach((r,i)=>{y+=6.3;doc.setDrawColor(220,207,191);doc.line(M,y+2.2,W-M,y+2.2);const b=i>=3;txt(r[0],M,y,{s:10,b});txt(r[1],W-M,y,{s:10,b,a:"right",c:i===4?(L.neg?[154,90,0]:Gd):N})});
  // long term
 y+=11;txt("Over the years (illustration, not a forecast)",M,y,{s:12,b:1});
- const bx=[["Net over 10 years",PDFS(L.n10),"while you pay the subscription"],["Net over 20 years",PDFS(L.n20),"no subscription after year 10"],["Grid saving in year 11",PDFR(L.sav11)+"/mo","the system is yours"]];
+ const bx=[["Net over 10 years",PDFS(L.n10),"while you pay the subscription"],["Net over 20 years",PDFS(L.n20),"buy-out for "+PDFR(GEN.buy)+" at year 10"],["Grid saving in year 11",PDFR(L.sav11)+"/mo","after panel and battery ageing"]];
  const cw=(W-2*M-8)/3;bx.forEach((b,i)=>{const x=M+i*(cw+4);fill(i===1?Mi:Cr);doc.roundedRect(x,y+3,cw,19,2,2,"F");txt(b[0],x+4,y+8.5,{s:8,b:1,c:Mu});txt(b[1],x+4,y+15.5,{s:14,b:1,c:G});txt(b[2],x+4,y+20,{s:7.5,c:Mu})});
  y+=27;
- // yearly bars
- txt("Estimated net saving each year",M,y,{s:10,b:1});y+=3;
- const yr=L.yr,hi=Math.max(...yr,0),lo=Math.min(...yr,0),span=(hi-lo)||1,CH=ex?9:12,bw=(W-2*M)/20,z=y+CH*hi/span;
- yr.forEach((v,i)=>{const h=Math.abs(v)/span*CH;fill(v>=0?G:Am);if(h>0.2)doc.rect(M+i*bw+0.5,v>=0?z-h:z,bw-1,h,"F")});
- doc.setDrawColor(...N);doc.line(M,z,W-M,z);
- doc.setLineDashPattern([1,1],0);doc.setDrawColor(...Mu);doc.line(M+10*bw,y,M+10*bw,y+CH);doc.setLineDashPattern([],0);
- [1,5,10,15,20].forEach(n=>txt(String(n),M+(n-0.5)*bw,y+CH+4,{s:7,c:Mu,a:"center"}));
- txt("Years 1-10: subscription",M,y+CH+9,{s:8,c:Mu});txt("Years 11-20: the system is yours",W-M,y+CH+9,{s:8,c:Mu,a:"right"});
- if(L.cross>0&&L.cross<10)txt(`On these assumptions, from year ${L.cross+1} the yearly saving is bigger than the subscription.`,M,y+CH+14,{s:8.5});
- y+=CH+(L.cross>0&&L.cross<10?18.5:13.5);
+ if(L.cross>0&&L.cross<10){txt(`On these assumptions, from year ${L.cross+1} the yearly saving is bigger than the subscription.`,M,y,{s:8.5});y+=6}
  // assumptions
  txt("How we worked it out",M,y,{s:10,b:1});
  const as=[`Based only on what you told us: average spend ${PDFR(L.bill)} a month, ${L.pl?L.pl.n:"your area"}, ${L.who==="esk"?"buying from Eskom":"buying from the municipality"}, ${L.meter==="con"?"monthly account":"prepaid meter"}, ${L.ph===3?"three-phase":"single-phase"} supply. Please check these: if any is wrong, this estimate will be wrong. Tariff used: ${L.t.n}${L.pl?" ("+L.pl.n+(L.pl.mun&&!L.pl.n.startsWith(L.pl.mun)?", "+L.pl.mun:"")+", "+(L.meter==="con"?"monthly account":"prepaid")+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
   `Solar: ${p.kwp} kWp at ${L.y.toFixed(1)} kWh per kWp a day, ${Math.round(L.d*100)}% of use in daylight, ${Math.round(L.dod*100)}% of the battery used each night. About ${K(L.used)} kWh of solar used a month. No credit for surplus solar.`,
-  `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year and ends after year 10. Panel output falls 0.5% a year.`,
+  `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year. The contract ends after year 10, when the system can be bought for ${PDFR(GEN.buy)}. Panel output falls ${GEN.pdeg}% and battery capacity ${GEN.bdeg}% a year. The inverter will be out of warranty after year 10 but is assumed to keep working.`,
   `Estimated peak use about ${kw1(L.pk.mid)} kW (${kw1(L.pk.lo)}-${kw1(L.pk.hi)} kW); the ${p.inv} kW inverter ${p.inv>=L.pk.hi?"covers it":p.inv>=L.pk.mid?"covers most peaks":"is below it, so run fewer large appliances at once during outages"}. Backup time assumes about 500 W of essentials. Upkeep and battery replacement after year 10 are not included, and amounts are not adjusted for inflation.`];
  y+=2;as.forEach(a=>{y=wrap("•  "+a,M,y+(ex?3.2:3.6),W-2*M,{s:8.5,c:Mu})-2});
  doc.setFont("helvetica","normal");doc.setFontSize(7);const dl=DISC.map(p=>doc.splitTextToSize(A(p.replace("2026/27",GEN.tyear)),W-2*M)),dh=6+dl.reduce((a,l)=>a+l.length*2.95+1.2,0)+4,dt=297-dh;
@@ -497,6 +494,8 @@ y+=11;txt("Over the years (illustration, not a forecast)",M,y,{s:12,b:1});
  if(y>dt-2)console.warn("PDF content overlaps disclaimer",y,dt);
  return doc;
 }
+try{$("sname").value=localStorage.getItem("vs_sales")||""}catch(e){}
+$("sname").addEventListener("change",()=>{try{localStorage.setItem("vs_sales",$("sname").value.trim())}catch(e){}});
 $("pdf").addEventListener("click",async()=>{
  const b=$("pdf"),msg=$("pdfmsg");
  if(REFRESH)await REFRESH();
@@ -504,16 +503,17 @@ $("pdf").addEventListener("click",async()=>{
  const doc=buildPdf();if(!doc){msg.textContent="The PDF tool didn't load. Check the internet connection and reload the page.";return}
  const fn="Versofy_estimate_"+(($("cname").value.trim()||LAST.p.n).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"")||"customer")+".pdf";
  b.disabled=true;
+ if(SAVE_EST){msg.textContent="Saving the record…";try{const L=LAST;await SAVE_EST({ref:L.ref,customer:$("cname").value.trim(),sales:($("sname")||{}).value||"",pdf:doc.output("datauristring").split(",")[1],data:{bill:L.bill,area:L.pl?L.pl.n:"",who:L.who,meter:L.meter,ph:L.ph,tariff:L.t.n,pkg:L.p.n,fee:L.p.fee,adds:L.p.adds,net:Math.round(L.net),n10:Math.round(L.n10),n20:Math.round(L.n20),after:Math.round(L.m.after),esc:L.esc,rec:L.isRec}})}catch(e){msg.textContent="Couldn't save the record of this estimate, so the PDF wasn't created. Check the connection and try again.";b.disabled=false;return}}
  try{
   const dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null;
-  if(dl){await dl.save({filename:fn,data:doc.output("blob")});msg.textContent="Saved "+fn+". Send it to the customer by email or WhatsApp."}
-  else{doc.save(fn);msg.textContent="Downloaded "+fn+". Send it to the customer by email or WhatsApp."}
+  if(dl){await dl.save({filename:fn,data:doc.output("blob")});msg.textContent="Saved "+fn+". Send it to the customer and ask them to reply “I understand this is an estimate.”"}
+  else{doc.save(fn);msg.textContent="Downloaded "+fn+(SAVE_EST?" (saved as "+LAST.ref+")":"")+". Send it to the customer and ask them to reply “I understand this is an estimate.”"}
  }catch(e){msg.textContent=e&&e.code==="declined"?"Download cancelled.":"Couldn't save the PDF here. Open the calculator in a browser on a computer and try again."}
  b.disabled=false;
 });
 
 // ---------- shared admin settings
-let REFRESH=null,GEN={...DEF_GEN},CFG_STATE="loading",DB=null,USER=null,CANEDIT=false,LIVE=null;
+let SAVE_EST=null,REFRESH=null,GEN={...DEF_GEN},CFG_STATE="loading",DB=null,USER=null,CANEDIT=false,LIVE=null;
 const TK=["jhb","jhbc","tsh","ekh","cpt","cptd","dbn","nmb","mng","bcm","eskl","eskp","oth"];
 const parseBlocks=str=>{const parts=String(str).split(/[,;]/).map(x=>x.trim()).filter(Boolean),b=[];let last=0;
  for(const pt of parts){const m=pt.match(/^(\*|\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)$/);if(!m)return null;const up=m[1]==="*"?1e9:+m[1],r=+m[2];if(up<=last||r<=0||r>50)return null;b.push([up,r]);last=up}
@@ -524,7 +524,7 @@ function loadMT(list){
  for(const x of list.slice(0,700)){const mun=clean(x.mun,60);if(!MUNSET.has(mun))continue;const mt=["pre","con"].includes(x.meter)?x.meter:"both";const b=Array.isArray(x.b)?x.b.filter(v=>Array.isArray(v)&&v.length===2).map(([u,r])=>[num(u,1,1e9,1e9),num(r,0.01,50,4)]):[];if(!b.length||b[b.length-1][0]<1e9)continue;
   T["mt:"+mun+(mt==="both"?"":"|"+mt)]={s:mun+" Local Municipality",n:clean(x.n,80)||mun+" domestic",why:(mt==="pre"?"Prepaid. ":mt==="con"?"Monthly account. ":"")+(/^https:\/\//.test(x.src||"")?"Source: "+clean(x.src,200).replace(/^https:\/\/(www\.)?/,"").split("/")[0]:"Loaded by admin"),fix:num(x.fix,0,1e5,0),b,flag:clean(x.flag,80)||undefined}}}
 function applyCfg(c){
- GEN={tesc:num(c.tesc,0,25,DEF_GEN.tesc),pdate:clean(c.pdate,40)||DEF_GEN.pdate,tyear:clean(c.tyear,20)||DEF_GEN.tyear,asOf:c.at?new Date(c.at).toLocaleDateString("en-ZA",{day:"numeric",month:"long",year:"numeric"}):DEF_GEN.asOf};
+ GEN={tesc:num(c.tesc,0,25,DEF_GEN.tesc),pdeg:num(c.pdeg,0,5,DEF_GEN.pdeg),bdeg:num(c.bdeg,0,10,DEF_GEN.bdeg),buy:num(c.buy,0,1e5,DEF_GEN.buy),pdate:clean(c.pdate,40)||DEF_GEN.pdate,tyear:clean(c.tyear,20)||DEF_GEN.tyear,asOf:c.at?new Date(c.at).toLocaleDateString("en-ZA",{day:"numeric",month:"long",year:"numeric"}):DEF_GEN.asOf};
  if(Array.isArray(c.products)&&c.products.length)PK=c.products.slice(0,40).map(normP).filter(p=>p.on);
  if(c.tariffs&&typeof c.tariffs==="object")for(const k of TK){const x=c.tariffs[k];if(!x)continue;const b=Array.isArray(x.b)?x.b.filter(v=>Array.isArray(v)&&v.length===2).map(([u,r])=>[num(u,1,1e9,1e9),num(r,0.01,50,4)]):null;
   Object.assign(T[k],{n:clean(x.n,80)||DEF_T[k].n,fix:num(x.fix,0,1e5,DEF_T[k].fix),b:b&&b.length?b:DEF_T[k].b,flag:clean(x.flag,80)||undefined})}
@@ -553,9 +553,13 @@ function showCfg(c){
  calc();if(CANEDIT&&!ADIRTY)fillAdmin()}
 async function loadCfg(){try{const r=await API("/api/config");const sig=JSON.stringify(r.config);if(sig!==LASTSIG){LASTSIG=sig;showCfg(r.config)}return true}catch(e){if(CFG_STATE!=="live")fallback("Couldn't reach the server for the latest settings.");else setStatus("warn","Couldn't check for newer settings just now. Showing those from "+GEN.asOf+".");return false}}
 REFRESH=loadCfg;
+SAVE_EST=e=>API("/api/estimates",{method:"POST",body:JSON.stringify(e)});
+async function loadEst(){const tb=$("aest").tBodies[0];try{const r=await API("/api/estimates?q="+encodeURIComponent($("a_eq").value.trim()));tb.textContent="";if(!r.estimates.length){tb.innerHTML='<tr><td colspan="8">None found.</td></tr>';return}
+ for(const x of r.estimates){const tr=document.createElement("tr"),d=x.data||{};[new Date(x.at).toLocaleString("en-ZA",{dateStyle:"medium",timeStyle:"short"}),x.ref,x.customer||"",x.sales||"",d.pkg||"",d.bill!=null?R(d.bill):"",d.net!=null?RS(d.net):""].forEach((v,i)=>{const td=document.createElement("td");td.textContent=v;if(i>=5)td.className="n";tr.append(td)});const td=document.createElement("td"),a=document.createElement("a");a.href="/api/estimates/"+encodeURIComponent(x.ref)+".pdf";a.textContent="Download";td.append(a);tr.append(td);tb.append(tr)}}catch(e){tb.innerHTML='<tr><td colspan="8">Could not load the estimates.</td></tr>'}}
+$("a_es").addEventListener("click",loadEst);$("a_eq").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();loadEst()}});
 async function loadLog(){const ol=$("a_log");try{const r=await API("/api/changes");ol.textContent="";if(!r.changes.length){ol.append(Object.assign(document.createElement("li"),{textContent:"None yet."}));return}
  for(const x of r.changes){const li=document.createElement("li");li.textContent=new Date(x.at).toLocaleString("en-ZA",{dateStyle:"medium",timeStyle:"short"})+", "+(clean(x.by,60)||"an admin")+": "+clean(x.what,300);ol.append(li)}}catch(e){}}
-function setAdmin(){CANEDIT=ME.role==="admin";$("admin").hidden=!CANEDIT;$("alogin").hidden=CANEDIT;if(CANEDIT){fillAdmin();loadLog()}}
+function setAdmin(){CANEDIT=ME.role==="admin";$("admin").hidden=!CANEDIT;$("alogin").hidden=CANEDIT;if(CANEDIT){fillAdmin();loadLog();loadEst()}}
 $("alf").addEventListener("submit",async e=>{e.preventDefault();const f=e.target,m=$("alm");m.className="amsg";m.textContent="Signing in…";
  try{ME=await API("/api/login",{method:"POST",body:JSON.stringify({name:f.name.value.trim(),password:f.pw.value})});f.pw.value="";m.textContent="";setAdmin();$("admin").scrollIntoView({block:"start"})}
  catch(err){m.className="amsg bad";m.textContent=err.status===429?"Too many tries. Wait a few minutes.":"That password didn't work."}});
@@ -573,7 +577,7 @@ function mtRow(x){return `<tr><td><input class="w16" list="mlist" data-k="mun" v
 function invRow(r){return `<tr><td><input type="checkbox" data-k="on" ${r.on!==false?"checked":""} aria-label="Show this upgrade" style="min-height:24px;width:24px"></td><td><input class="w5" type="number" data-k="from" value="${H(r.from)}" step="1"></td><td><input class="w5" type="number" data-k="to" value="${H(r.to)}" step="1"></td><td><input class="w7" type="number" data-k="fee" value="${H(r.fee)}" step="1"></td><td><button type="button" class="abtn sm" data-del>Remove</button></td></tr>`}
 function fillAdmin(src){
  const c=src||LIVE||{};const prods=(Array.isArray(c.products)&&c.products.length?c.products:DEF_PK).map(normP);
- $("a_tesc").value=num(c.tesc,0,25,DEF_GEN.tesc);$("a_pdate").value=clean(c.pdate,40)||DEF_GEN.pdate;$("a_tyear").value=clean(c.tyear,20)||DEF_GEN.tyear;
+ $("a_tesc").value=num(c.tesc,0,25,DEF_GEN.tesc);$("a_pdeg").value=num(c.pdeg,0,5,DEF_GEN.pdeg);$("a_bdeg").value=num(c.bdeg,0,10,DEF_GEN.bdeg);$("a_buy").value=num(c.buy,0,1e5,DEF_GEN.buy);$("a_pdate").value=clean(c.pdate,40)||DEF_GEN.pdate;$("a_tyear").value=clean(c.tyear,20)||DEF_GEN.tyear;
  $("aprod").tBodies[0].innerHTML=prods.map(prodRow).join("");
  if(!$("mlist").children.length)$("mlist").innerHTML=MUNIS.map(m=>`<option value="${H(m.n)}">`).join("");
  $("amt").tBodies[0].innerHTML=(Array.isArray(c.mtariffs)&&c.mtariffs.length?c.mtariffs:DEF_MT).map(mtRow).join("");
@@ -603,9 +607,9 @@ function readAdmin(){
   const meter=g("meter").value,key=mun+"|"+meter;if(!MUNSET.has(mun))errs.push(`"${mun||"(blank)"}" isn't one of the 205 local municipalities. Pick it from the list.`);else if(seen.has(key))errs.push(`${mun} has two tariffs for the same meter type.`);seen.add(key);
   if(!b)errs.push(`${mun}: energy rates aren't in the "350=3.34, *=4.44" form, ending with *.`);if(!(fix>=0))errs.push(`${mun}: fixed charge must be R0 or more.`);
   return {mun,meter,n:g("n").value.trim()||mun+" domestic",fix,b:b||[],flag:g("flag").value.trim(),src:g("src").value.trim().slice(0,300)}});
- const tesc=+$("a_tesc").value;if(!(tesc>=0&&tesc<=25))errs.push("Default tariff increase must be 0 to 25%.");
+ const tesc=+$("a_tesc").value;if(!(tesc>=0&&tesc<=25))errs.push("Default tariff increase must be 0 to 25%.");const pdeg=+$("a_pdeg").value,bdeg=+$("a_bdeg").value,buy=+$("a_buy").value;if(!(pdeg>=0&&pdeg<=5))errs.push("Panel output loss must be 0 to 5%.");if(!(bdeg>=0&&bdeg<=10))errs.push("Battery capacity loss must be 0 to 10%.");if(!(buy>=0))errs.push("Buy-out price can't be negative.");
  const invup=[...$("ainv").tBodies[0].rows].map((tr,i)=>{const g=k=>tr.querySelector(`[data-k="${k}"]`);const r={on:g("on").checked,from:+g("from").value,to:+g("to").value,fee:+g("fee").value||0};if(!(r.to>r.from))errs.push(`Inverter upgrade ${i+1}: "to" must be bigger than "from".`);if(r.fee<0)errs.push(`Inverter upgrade ${i+1}: fee can't be negative.`);return r});
- return {errs,cfg:{products,addons,invup,tariffs,mtariffs,tesc,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
+ return {errs,cfg:{products,addons,invup,tariffs,mtariffs,tesc,pdeg,bdeg,buy,pdate:$("a_pdate").value.trim(),tyear:$("a_tyear").value.trim()}};
 }
 function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)||DEF_PK).map(p=>[p.n,p])),pb=Object.fromEntries(b.products.map(p=>[p.n,p]));
  for(const n in pb){const x=pa[n],y=pb[n];if(!x){out.push("added "+n);continue}for(const[k,l]of[["fee","fee"],["esc","increase"],["kwp","kWp"],["bat","battery"],["inv","inverter"],["pan","panels"],["on","shown"],["sup","supply"],["g","website guide"],["min","savings point"],["ltd","note"]])if(String(x[k]??"")!==String(y[k]??""))out.push(`${n} ${l} ${x[k]??""} → ${y[k]}`)}
@@ -615,7 +619,7 @@ function diffTxt(a,b){const out=[];const pa=Object.fromEntries(((a&&a.products)|
  for(const id in aa)if(!b.addons.some(y=>y.id===id))out.push("removed add-on "+aa[id].n);
  if(JSON.stringify(((a&&a.invup)||DEF_INV).map(normI))!==JSON.stringify(b.invup.map(normI)))out.push("inverter upgrades ("+b.invup.map(r=>r.from+"→"+r.to+" kW R"+r.fee).join(", ")+")");
  if(JSON.stringify((a&&a.mtariffs)||[])!==JSON.stringify(b.mtariffs))out.push("municipal tariffs ("+b.mtariffs.map(x=>x.mun).join(", ")+")");
- if(String((a&&a.tesc)??DEF_GEN.tesc)!==String(b.tesc))out.push("default tariff increase → "+b.tesc+"%");
+ if(String((a&&a.tesc)??DEF_GEN.tesc)!==String(b.tesc))out.push("default tariff increase → "+b.tesc+"%");for(const[k,l]of[["pdeg","panel loss %"],["bdeg","battery loss %"],["buy","buy-out R"]])if(String((a&&a[k])??DEF_GEN[k])!==String(b[k]))out.push(l+" → "+b[k]);
  return out.join("; ")||"saved with no changes"}
 $("admin").addEventListener("input",()=>{ADIRTY=true;$("a_msg").textContent="Unsaved changes.";$("a_msg").className="amsg"});
 $("admin").addEventListener("click",e=>{if(e.target.matches("[data-del]")){e.target.closest("tr").remove();ADIRTY=true;$("a_msg").textContent="Unsaved changes."}});
@@ -635,7 +639,7 @@ $("a_csvout").addEventListener("click",async()=>{const rows=[["municipality","ap
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download=fn;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000)});
 $("a_mt").addEventListener("click",()=>{$("amt").tBodies[0].insertAdjacentHTML("beforeend",mtRow({mun:"",n:"",fix:0,b:[],flag:""}));ADIRTY=true;$("a_msg").textContent="Unsaved changes."});
 $("a_undo").addEventListener("click",()=>fillAdmin());
-$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,invup:DEF_INV,tariffs:t,mtariffs:DEF_MT,tesc:DEF_GEN.tesc,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
+$("a_def").addEventListener("click",()=>{const t={};for(const k of TK)t[k]={n:DEF_T[k].n,fix:DEF_T[k].fix,b:DEF_T[k].b,flag:DEF_T[k].flag||""};fillAdmin({products:DEF_PK,addons:DEF_ADD,invup:DEF_INV,tariffs:t,mtariffs:DEF_MT,tesc:DEF_GEN.tesc,pdeg:DEF_GEN.pdeg,bdeg:DEF_GEN.bdeg,buy:DEF_GEN.buy,pdate:DEF_GEN.pdate,tyear:DEF_GEN.tyear})});
 $("a_save").addEventListener("click",async()=>{
  const m=$("a_msg"),{errs,cfg}=readAdmin();if(errs.length){m.className="amsg bad";m.textContent=errs.slice(0,3).join(" ");return}
  const b=$("a_save");b.disabled=true;m.className="amsg";m.textContent="Saving…";

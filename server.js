@@ -25,7 +25,14 @@ if (process.env.DATABASE_URL) {
     async init() {
       await pool.query(`create table if not exists settings (id text primary key, data jsonb not null, at timestamptz not null, by text)`);
       await pool.query(`create table if not exists changes (id serial primary key, at timestamptz not null, by text, what text)`);
+      await pool.query(`create table if not exists estimates (ref text primary key, at timestamptz not null, sales text, customer text, data jsonb not null, pdf bytea not null)`);
     },
+    async addEst(e) { await pool.query(`insert into estimates (ref,at,sales,customer,data,pdf) values ($1,$2,$3,$4,$5,$6)`, [e.ref, e.at, e.sales, e.customer, e.data, e.pdf]); },
+    async listEst(q) {
+      const r = await pool.query(`select ref, at, sales, customer, data from estimates where ($1 = '' or ref ilike '%'||$1||'%' or customer ilike '%'||$1||'%' or sales ilike '%'||$1||'%') order by at desc limit 100`, [q]);
+      return r.rows.map(x => ({ ref: x.ref, at: x.at.toISOString(), sales: x.sales, customer: x.customer, data: x.data }));
+    },
+    async getPdf(ref) { const r = await pool.query(`select pdf from estimates where ref=$1`, [ref]); return r.rows[0] ? r.rows[0].pdf : null; },
     async get() {
       const r = await pool.query(`select data, at, by from settings where id='current'`);
       return r.rows[0] ? { ...r.rows[0].data, at: r.rows[0].at.toISOString(), by: r.rows[0].by } : null;
@@ -50,6 +57,9 @@ if (process.env.DATABASE_URL) {
     async get() { return read().current; },
     async put(data, by, what) { const d = read(), at = new Date().toISOString(); d.current = { ...data, at, by }; d.changes.unshift({ at, by, what }); d.changes = d.changes.slice(0, 50); write(d); },
     async changes() { return read().changes.slice(0, 10); },
+    async addEst(e) { const dir = path.join(__dirname, "data", "estimates"); fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, e.ref + ".pdf"), e.pdf); const d = read(); d.estimates = [{ ref: e.ref, at: e.at.toISOString(), sales: e.sales, customer: e.customer, data: e.data }, ...(d.estimates || [])]; write(d); },
+    async listEst(q) { const l = (read().estimates || []); const t = q.toLowerCase(); return l.filter(x => !t || [x.ref, x.customer, x.sales].some(v => String(v || "").toLowerCase().includes(t))).slice(0, 100); },
+    async getPdf(ref) { try { return fs.readFileSync(path.join(__dirname, "data", "estimates", ref + ".pdf")); } catch { return null; } },
   };
 }
 
@@ -78,9 +88,9 @@ const send = (res, code, body, headers = {}) => {
   res.writeHead(code, { "Content-Type": json ? "application/json" : "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Referrer-Policy": "same-origin", ...headers });
   res.end(json ? JSON.stringify(body) : body);
 };
-const body = req => new Promise((ok, bad) => {
+const body = (req, max = 300e3) => new Promise((ok, bad) => {
   let n = 0; const chunks = [];
-  req.on("data", c => { n += c.length; if (n > 300e3) { bad(new Error("too large")); req.destroy(); } else chunks.push(c); });
+  req.on("data", c => { n += c.length; if (n > max) { bad(new Error("too large")); req.destroy(); } else chunks.push(c); });
   req.on("end", () => { try { ok(JSON.parse(Buffer.concat(chunks).toString() || "{}")); } catch (e) { bad(e); } });
 });
 const isSecure = req => req.headers["x-forwarded-proto"] === "https";
@@ -150,6 +160,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (url.pathname === "/api/config" && req.method === "GET") return send(res, 200, { config: await store.get() });
+    if (url.pathname === "/api/estimates" && req.method === "POST") {
+      const origin = req.headers.origin;
+      if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error: "bad origin" });
+      const b = await body(req, 3e6);
+      const ref = String(b.ref || "");
+      if (!/^VS-\d{8}-[A-Z0-9]{3,8}$/.test(ref)) return send(res, 400, { error: "bad ref" });
+      const pdf = Buffer.from(String(b.pdf || ""), "base64");
+      if (pdf.length < 500 || pdf.slice(0, 5).toString() !== "%PDF-") return send(res, 400, { error: "bad pdf" });
+      const data = b.data && typeof b.data === "object" && !Array.isArray(b.data) ? b.data : {};
+      if (JSON.stringify(data).length > 20000) return send(res, 400, { error: "too large" });
+      await store.addEst({ ref, at: new Date(), sales: clean(b.sales, 60) || (sess.role === "admin" ? clean(sess.name, 60) : ""), customer: clean(b.customer, 60), data, pdf });
+      return send(res, 201, { ok: true, ref });
+    }
     if (url.pathname === "/api/me") return send(res, 200, { role: sess ? sess.role : null, name: sess ? sess.name || "" : "" });
     if (url.pathname === "/api/login" && req.method === "POST") {
       if (limited(ip)) return send(res, 429, { error: "too many tries" });
@@ -172,6 +195,15 @@ const server = http.createServer(async (req, res) => {
       const { at, by, ...cfg } = b.config;
       await store.put(cfg, sess.name, clean(b.what, 1000));
       return send(res, 200, { ok: true });
+    }
+    if (url.pathname === "/api/estimates" && req.method === "GET") return send(res, 200, { estimates: await store.listEst(clean(url.searchParams.get("q"), 60).trim()) });
+    if (url.pathname.startsWith("/api/estimates/") && req.method === "GET") {
+      const ref = decodeURIComponent(url.pathname.slice(15)).replace(/\.pdf$/, "");
+      if (!/^VS-\d{8}-[A-Z0-9]{3,8}$/.test(ref)) return send(res, 400, { error: "bad ref" });
+      const pdf = await store.getPdf(ref);
+      if (!pdf) return send(res, 404, { error: "not found" });
+      res.writeHead(200, { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${ref}.pdf"`, "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+      return res.end(pdf);
     }
     if (url.pathname === "/api/changes" && req.method === "GET") return send(res, 200, { changes: await store.changes() });
     return send(res, 404, { error: "not found" });
