@@ -138,7 +138,7 @@ a{color:inherit}
  <form class="panel" id="f" autocomplete="off">
   <div class="step"><b>1</b>The customer</div>
   <div class="field"><label class="lab" for="bill">Monthly electricity spend</label>
-   <div class="money"><span>R</span><input type="number" id="bill" min="200" max="30000" step="50" value="4500" inputmode="numeric"></div>
+   <div class="money"><span>R</span><input type="text" id="bill" min="200" max="30000" step="50" value="4500" inputmode="numeric"></div>
    <div class="chips" id="chips" aria-label="Common bill amounts"><button type="button" data-b="1500">R1 500</button><button type="button" data-b="2500">R2 500</button><button type="button" data-b="3500">R3 500</button><button type="button" data-b="4500">R4 500</button><button type="button" data-b="6000">R6 000</button><button type="button" data-b="8000">R8 000</button></div>
    <div class="hint">Average month incl. VAT: electricity bill or prepaid tokens bought.</div></div>
   <div class="field"><label class="lab" for="loc">Suburb or town</label>
@@ -408,8 +408,10 @@ function setPlace(pl,keepWho){
  if(pl)$("yield").value=Y[pl.p];
  $("sugg").hidden=true;calc();
 }
-function calc(){
- const bill=Math.max(0,+$("bill").value||0),d=$("day").value/100,y=+$("yield").value,dod=$("dod").value/100,esc=$("esc").value/100;
+function billVal(){const v=Math.round(+String($("bill").value).replace(/,(\d\d)$/,".$1").replace(/[^\d.]/g,"")||0);return Math.min(Math.max(v,0),100000)}
+function calc(){try{calc0();const x=document.getElementById("calcerr");if(x)x.hidden=true}catch(e){let x=document.getElementById("calcerr");if(!x){x=document.createElement("div");x.id="calcerr";x.className="must";x.setAttribute("role","alert");const w=$("rec").closest(".recwrap")||$("rec");w.parentNode.insertBefore(x,w)}x.hidden=false;x.textContent="Something went wrong working out this estimate, so the figures below may be out of date. Please screenshot this and send it to the admin: "+(e&&e.message||e);console.error(e)}}
+function calc0(){
+ const bill=billVal(),d=$("day").value/100,y=+$("yield").value,dod=$("dod").value/100,esc=$("esc").value/100;
  $("dayo").textContent=Math.round(d*100)+"%";$("yo").textContent=y.toFixed(1)+" kWh";$("dodo").textContent=Math.round(dod*100)+"%";$("esco").textContent=$("esc").value+"%";
  const tk=pickTariff(bill),t=T[tk];
  $("cusbox").hidden=st.ovr!=="cus";
@@ -466,7 +468,7 @@ function calc(){
  const live=PK.filter(p=>p.ph.includes(st.ph)).slice().sort((a,b)=>a.inv-b.inv||a.fee-b.fee);
  {const top=p=>{let u=0;for(let x=1500;x<=20000;x+=500){if(p.inv>=peakKW(kwhFrom(t,x)).mid)u=x;else break}return u};$("gdtbl").tBodies[0].innerHTML=PK.map(p=>{const u=top(p),sp=spOf(p);return `<tr><td data-l="Package"><b>${p.n}</b><div class="sp">${PHL(p)}</div></td><td class="n" data-l="Inverter">${p.inv} kW</td><td data-l="Website guide">Bills above ${R(p.g)}</td><td data-l="R1 500 up to savings point">${!sp||sp>1500?"Backup option":"n/a"}</td><td data-l="Saves money from"><b>${sp?R(sp):"Not at this tariff"}</b></td><td data-l="Inverter covers peak up to">${u>=20000?"R20 000+":u?R(u):"Below R1 500"}</td></tr>`}).join("")}
  $("pktbl").tBodies[0].innerHTML=[1500,2000,2500,3000,4000,5000,6000,7000,8000,9000,10000].map(b=>{const k=kwhFrom(t,b),q=peakKW(k),fit=live.find(p=>p.inv>=q.mid);return `<tr class="${Math.abs(b-bill)<250?"sel":""}"><td data-l="Monthly spend"><b>${R(b)}</b></td><td class="n" data-l="Use / month">${K(k)} kWh</td><td class="n" data-l="Average load">${kw1(q.avg)} kW</td><td class="n" data-l="Estimated peak"><b>${kw1(q.mid)} kW</b><div class="sp">${kw1(q.lo)}–${kw1(q.hi)} kW</div></td><td data-l="Covers the peak">${fit?`${fit.n} (${fit.inv} kW inverter)`:"None: needs a bigger inverter"}</td></tr>`}).join("");
- try{localStorage.setItem("vsf-calc2",JSON.stringify({bill:$("bill").value,loc:st.place&&st.place.n,who:st.who,meter:st.meter,ph:st.ph,day:$("day").value}))}catch(e){}
+ try{localStorage.setItem("vsf-calc2",JSON.stringify({bill:$("bill").value,loc:st.place&&st.place.n,oth:!!(st.place&&st.place.m==="oth"&&!PL.includes(st.place)),who:st.who,meter:st.meter,ph:st.ph,day:$("day").value,roof:st.roof,shade:st.shade,dod:$("dod").value}))}catch(e){}
 }
 
 const DISC=["This is an estimate, not a quote, offer or guarantee. It is based only on what the customer told us (monthly spend, area, supplier, meter type and supply), which we have not checked. All amounts include VAT.", "It uses a simplified model: average monthly solar output for the region with assumed roof direction and shading, an assumed daytime share of use and fixed yearly increases. Actual savings and backup time will differ with weather, how and when power is used, outages, the installation, the home's wiring and changes to tariffs or regulation. Versofy does not guarantee any saving, backup time or payback. Long-term figures are illustrations on the stated assumptions, not forecasts. This is not financial advice.", "Versofy does not determine which tariff the customer is on. We use the tariff a standalone home with this supplier is most likely to be on, at published 2026/27 rates incl. VAT, and cannot confirm that it matches the customer's own tariff or bill.", "Prices are as at the date shown and may change; after 30 days, ask us for an updated estimate. This estimate does not form part of any agreement: only a site assessment and the signed Versofy subscription agreement, with its terms and conditions, set the final system, price and obligations, and they take precedence over this document. The customer's details are used only to prepare this estimate and follow up on it, in line with the Protection of Personal Information Act and Versofy's privacy policy."];
@@ -698,6 +700,7 @@ function suggest(){
  box.hidden=false;
 }
 $("loc").addEventListener("input",suggest);
+$("loc").addEventListener("change",()=>{const v=$("loc").value.trim();if(!v){$("loc").value=st.place?st.place.n:"";return}if(st.place&&norm(st.place.n)===norm(v))return;const q=norm(v);const ex=PL.find(p=>norm(p.n)===q);const h=ex||PL.filter(p=>norm(p.n).includes(q)).sort((a,b)=>norm(a.n).indexOf(q)-norm(b.n).indexOf(q))[0];if(h)setPlace(h);else setPlace({n:v,m:"oth",p:"GP",e:false})});
 $("loc").addEventListener("focus",e=>e.target.select());
 $("loc").addEventListener("keydown",e=>{const bs=[...$("sugg").children];if($("sugg").hidden||!bs.length)return;if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();hi=(hi+(e.key==="ArrowDown"?1:bs.length-1))%bs.length;bs.forEach((b,i)=>b.className=i===hi?"on":"")}if(e.key==="Enter"){e.preventDefault();bs[hi].click()}if(e.key==="Escape")$("sugg").hidden=true});
 $("meter").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.meter=b.dataset.m;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
@@ -712,13 +715,13 @@ $("tbl").addEventListener("click",e=>{const tr=e.target.closest("tr[data-n]");if
 $("tbl").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-n]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();st.sel=tr.dataset.n;calc()}});
 $("f").addEventListener("input",e=>{if(!["loc","ovr"].includes(e.target.id))calc()});
 $("bill").addEventListener("input",()=>{st.sel=null;syncChips()});
-const syncChips=()=>{for(const c of $("chips").children)c.setAttribute("aria-pressed",+c.dataset.b===+$("bill").value)};
+const syncChips=()=>{for(const c of $("chips").children)c.setAttribute("aria-pressed",+c.dataset.b===billVal())};
 $("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c)return;$("bill").value=c.dataset.b;st.sel=null;syncChips();calc()});
 syncChips();
 $("f").addEventListener("submit",e=>e.preventDefault());
 document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
 $("reset").addEventListener("click",()=>{$("cname").value="";st.roof="mix";st.shade="lite";$("roof").value="mix";$("shade").value="lite";$("ack").checked=false;st.add={};renderAdds();setTimeout(syncChips);$("bill").value=4500;$("day").value=40;$("dod").value=80;$("esc").value=GEN.tesc;$("ovr").value="";Object.assign(st,{who:"muni",meter:"pre",ph:1,sel:null,ovr:""});setPlace(PL.find(p=>p.n==="Randburg"))});
-try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}st.who=s.who||"muni";st.meter=s.meter==="con"?"con":"pre"}}catch(e){}
+try{const s=JSON.parse(localStorage.getItem("vsf-calc2")||"null");if(s){$("bill").value=s.bill;$("day").value=s.day;st.ph=s.ph||1;const pl=PL.find(p=>p.n===s.loc)||(s.oth&&s.loc?{n:String(s.loc).slice(0,80),m:"oth",p:"GP",e:false}:null);if(pl){st.place=pl;$("loc").value=pl.n;$("yield").value=Y[pl.p]}if(ROOFS[s.roof]){st.roof=s.roof;$("roof").value=s.roof}if(SHADES[s.shade]){st.shade=s.shade;$("shade").value=s.shade}if(s.dod)$("dod").value=s.dod;st.who=s.who||"muni";st.meter=s.meter==="con"?"con":"pre"}}catch(e){}
 calc();syncChips();
 }
 </script>
