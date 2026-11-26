@@ -25,6 +25,7 @@ if (process.env.DATABASE_URL) {
     async init() {
       await pool.query(`create table if not exists settings (id text primary key, data jsonb not null, at timestamptz not null, by text)`);
       await pool.query(`create table if not exists changes (id serial primary key, at timestamptz not null, by text, what text)`);
+      await pool.query(`create table if not exists users (id serial primary key, username text unique not null, name text not null, hash text not null, active boolean not null default true, at timestamptz not null)`);
       await pool.query(`create table if not exists estimates (ref text primary key, at timestamptz not null, sales text, customer text, data jsonb not null, pdf bytea not null)`);
     },
     async addEst(e) { await pool.query(`insert into estimates (ref,at,sales,customer,data,pdf) values ($1,$2,$3,$4,$5,$6)`, [e.ref, e.at, e.sales, e.customer, e.data, e.pdf]); },
@@ -33,6 +34,9 @@ if (process.env.DATABASE_URL) {
       return r.rows.map(x => ({ ref: x.ref, at: x.at.toISOString(), sales: x.sales, customer: x.customer, data: x.data }));
     },
     async getPdf(ref) { const r = await pool.query(`select pdf from estimates where ref=$1`, [ref]); return r.rows[0] ? r.rows[0].pdf : null; },
+    async users() { const r = await pool.query(`select id, username, name, hash, active, at from users order by name`); return r.rows.map(x => ({ ...x, at: x.at.toISOString() })); },
+    async addUser(u) { await pool.query(`insert into users (username,name,hash,active,at) values ($1,$2,$3,true,$4)`, [u.username, u.name, u.hash, new Date()]); },
+    async setUser(id, f) { if (f.hash) await pool.query(`update users set hash=$2 where id=$1`, [id, f.hash]); if (typeof f.active === "boolean") await pool.query(`update users set active=$2 where id=$1`, [id, f.active]); if (f.name) await pool.query(`update users set name=$2 where id=$1`, [id, f.name]); },
     async get() {
       const r = await pool.query(`select data, at, by from settings where id='current'`);
       return r.rows[0] ? { ...r.rows[0].data, at: r.rows[0].at.toISOString(), by: r.rows[0].by } : null;
@@ -60,6 +64,9 @@ if (process.env.DATABASE_URL) {
     async addEst(e) { const dir = path.join(__dirname, "data", "estimates"); fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(path.join(dir, e.ref + ".pdf"), e.pdf); const d = read(); d.estimates = [{ ref: e.ref, at: e.at.toISOString(), sales: e.sales, customer: e.customer, data: e.data }, ...(d.estimates || [])]; write(d); },
     async listEst(q) { const l = (read().estimates || []); const t = q.toLowerCase(); return l.filter(x => !t || [x.ref, x.customer, x.sales].some(v => String(v || "").toLowerCase().includes(t))).slice(0, 100); },
     async getPdf(ref) { try { return fs.readFileSync(path.join(__dirname, "data", "estimates", ref + ".pdf")); } catch { return null; } },
+    async users() { return read().users || []; },
+    async addUser(u) { const d = read(); d.users = d.users || []; if (d.users.some(x => x.username === u.username)) throw Object.assign(new Error("dup"), { code: "23505" }); d.users.push({ id: (d.users.reduce((m, x) => Math.max(m, x.id), 0) + 1), username: u.username, name: u.name, hash: u.hash, active: true, at: new Date().toISOString() }); write(d); },
+    async setUser(id, f) { const d = read(); const u = (d.users || []).find(x => x.id === id); if (!u) return; if (f.hash) u.hash = f.hash; if (typeof f.active === "boolean") u.active = f.active; if (f.name) u.name = f.name; write(d); },
   };
 }
 
@@ -77,6 +84,13 @@ const readSession = req => {
   try { const s = JSON.parse(Buffer.from(m[1], "base64url").toString()); return s.exp > Date.now() ? s : null; } catch { return null; }
 };
 const same = (a, b) => { const x = crypto.createHash("sha256").update(String(a)).digest(), y = crypto.createHash("sha256").update(String(b)).digest(); return crypto.timingSafeEqual(x, y); };
+
+// ---------- sales users (scrypt hashes)
+const hashPw = pw => { const salt = crypto.randomBytes(16).toString("hex"); return salt + ":" + crypto.scryptSync(String(pw), salt, 32).toString("hex"); };
+const checkPw = (pw, h) => { const [salt, k] = String(h).split(":"); if (!salt || !k) return false; const a = crypto.scryptSync(String(pw), salt, 32), b = Buffer.from(k, "hex"); return a.length === b.length && crypto.timingSafeEqual(a, b); };
+let UCACHE = { at: 0, list: [] };
+const usersCached = async () => { if (Date.now() - UCACHE.at > 30e3) UCACHE = { at: Date.now(), list: await store.users() }; return UCACHE.list; };
+const bustUsers = () => { UCACHE.at = 0; };
 
 // ---------- naive rate limit for sign-in
 const tries = new Map();
@@ -106,7 +120,7 @@ function validConfig(c) {
   return c.products.every(p => p && typeof p.n === "string" && +p.fee > 0 && +p.kwp > 0);
 }
 
-const LOGIN_PAGE = msg => `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Versofy savings calculator</title>
+const LOGIN_PAGE = (msg, personal) => `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Versofy savings calculator</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,800&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px;background:#193f2e radial-gradient(ellipse at 80% -10%,#2b5c47 0,transparent 60%);font:16px/1.5 "Open Sans",system-ui,sans-serif;color:#121442}
@@ -120,9 +134,9 @@ input:focus-visible,button:focus-visible{outline:3px solid #faa21b;outline-offse
 .go{width:100%;min-height:48px;margin-top:16px;border:0;border-radius:999px;background:#fdbd14;color:#121442;font:700 16px "Open Sans",sans-serif;cursor:pointer}.go:hover{background:#faa21b}
 .err{margin:14px 0 0;color:#c2413a;font-weight:600;font-size:15px}.foot{margin:18px 0 0;font-size:13px;color:#4d5a52}
 </style></head>
-<body><form class="card" method="post" action="/login"><div class="sun" aria-hidden="true"></div><h1>Versofy savings calculator</h1><p class="sub">For the Versofy sales team. Enter the team password to start a quote.</p>
-<label for="pw">Team password</label><div class="pw"><input id="pw" type="password" name="password" required autofocus autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="current-password"><button type="button" onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button></div>
-<button class="go">Open the calculator</button>${msg ? `<p class="err" role="alert">${msg}</p>` : ""}<p class="foot">Don't have the password? Ask your sales manager.</p></form></body></html>`;
+<body><form class="card" method="post" action="/login"><div class="sun" aria-hidden="true"></div><h1>Versofy savings calculator</h1><p class="sub">For the Versofy sales team. ${personal ? "Sign in with your own username and password." : "Enter the team password to start a quote."}</p>
+${personal ? `<label for="un">Username</label><div class="pw" style="margin-bottom:14px"><input id="un" name="username" required autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" style="padding-right:14px"></div>` : ""}<label for="pw">${personal ? "Password" : "Team password"}</label><div class="pw"><input id="pw" type="password" name="password" required autofocus autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="current-password"><button type="button" onclick="const i=document.getElementById('pw');i.type=i.type==='password'?'text':'password';this.textContent=i.type==='password'?'Show':'Hide'">Show</button></div>
+<button class="go">Open the calculator</button>${msg ? `<p class="err" role="alert">${msg}</p>` : ""}<p class="foot">${personal ? "No sign-in yet, or forgot your password? Ask your sales manager." : "Don't have the password? Ask your sales manager."}</p></form></body></html>`;
 
 const server = http.createServer(async (req, res) => {
   try {
@@ -138,16 +152,27 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === "/login" && req.method === "POST") {
       if (limited(ip)) return send(res, 429, LOGIN_PAGE("Too many tries. Wait a few minutes."));
       let raw = ""; for await (const c of req) { raw += c; if (raw.length > 2000) break; }
-      const pw = tidy(new URLSearchParams(raw).get("password"));
-      const role = SALES_PASSWORD && same(pw, tidy(SALES_PASSWORD)) ? "sales" : ADMIN_PASSWORD && same(pw, tidy(ADMIN_PASSWORD)) ? "admin" : null;
+      const form = new URLSearchParams(raw), pw = tidy(form.get("password")), un = tidy(form.get("username")).toLowerCase();
+      const users = await usersCached(), live = users.filter(u => u.active);
+      if (un) {
+        const u = live.find(x => x.username === un);
+        if (u && checkPw(pw, u.hash)) return send(res, 303, "", { Location: "/", "Set-Cookie": makeCookie({ role: "sales", name: u.name, uid: u.id, exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) });
+        if (un === "admin" && ADMIN_PASSWORD && same(pw, tidy(ADMIN_PASSWORD))) return send(res, 303, "", { Location: "/", "Set-Cookie": makeCookie({ role: "admin", name: "Admin", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) });
+        return send(res, 401, LOGIN_PAGE("That username and password didn't match. Passwords are case-sensitive.", true));
+      }
+      // shared team password only works until the first personal sign-in is created
+      const role = !live.length && SALES_PASSWORD && same(pw, tidy(SALES_PASSWORD)) ? "sales" : ADMIN_PASSWORD && same(pw, tidy(ADMIN_PASSWORD)) ? "admin" : null;
       if (role) return send(res, 303, "", { Location: "/", "Set-Cookie": makeCookie({ role, name: role === "admin" ? "Admin" : "", exp: Date.now() + SESSION_HOURS * 3600e3 }, isSecure(req)) });
+      if (live.length) return send(res, 401, LOGIN_PAGE("Sign in with your own username and password.", true));
       console.warn(`Team sign-in failed (typed ${pw.length} characters, expected ${tidy(SALES_PASSWORD).length})`);
       return send(res, 401, LOGIN_PAGE("That password didn't work. Passwords are case-sensitive."));
     }
+    // a deactivated user's session stops working
+    if (sess && sess.uid) { const u = (await usersCached()).find(x => x.id === sess.uid); if (!u || !u.active) return send(res, url.pathname.startsWith("/api/") ? 401 : 303, url.pathname.startsWith("/api/") ? { error: "sign in" } : "", { Location: "/", "Set-Cookie": "vs=; Path=/; Max-Age=0" }); }
     if (!SALES_PASSWORD) return send(res, 503, url.pathname.startsWith("/api/") ? { error: "not configured" } : "<!DOCTYPE html><title>Not set up</title><p style='font:16px system-ui;padding:40px'>The calculator is locked until the SALES_PASSWORD variable is set in Railway.</p>");
     if (!salesOk) {
       if (url.pathname.startsWith("/api/")) return send(res, 401, { error: "sign in" });
-      return send(res, 200, LOGIN_PAGE(""));
+      return send(res, 200, LOGIN_PAGE("", (await usersCached()).some(u => u.active)));
     }
 
     if (url.pathname === "/" || url.pathname === "/index.html") {
@@ -170,10 +195,10 @@ const server = http.createServer(async (req, res) => {
       if (pdf.length < 500 || pdf.slice(0, 5).toString() !== "%PDF-") return send(res, 400, { error: "bad pdf" });
       const data = b.data && typeof b.data === "object" && !Array.isArray(b.data) ? b.data : {};
       if (JSON.stringify(data).length > 20000) return send(res, 400, { error: "too large" });
-      await store.addEst({ ref, at: new Date(), sales: clean(b.sales, 60) || (sess.role === "admin" ? clean(sess.name, 60) : ""), customer: clean(b.customer, 60), data, pdf });
+      await store.addEst({ ref, at: new Date(), sales: sess.uid ? clean(sess.name, 60) : (clean(b.sales, 60) || (sess.role === "admin" ? clean(sess.name, 60) : "")), customer: clean(b.customer, 60), data, pdf });
       return send(res, 201, { ok: true, ref });
     }
-    if (url.pathname === "/api/me") return send(res, 200, { role: sess ? sess.role : null, name: sess ? sess.name || "" : "" });
+    if (url.pathname === "/api/me") return send(res, 200, { role: sess ? sess.role : null, name: sess ? sess.name || "" : "", personal: !!(sess && sess.uid) });
     if (url.pathname === "/api/login" && req.method === "POST") {
       if (limited(ip)) return send(res, 429, { error: "too many tries" });
       const b = await body(req);
@@ -194,6 +219,26 @@ const server = http.createServer(async (req, res) => {
       if (!validConfig(b.config)) return send(res, 400, { error: "invalid settings" });
       const { at, by, ...cfg } = b.config;
       await store.put(cfg, sess.name, clean(b.what, 1000));
+      return send(res, 200, { ok: true });
+    }
+    if (url.pathname === "/api/users" && req.method === "GET") return send(res, 200, { users: (await store.users()).map(({ hash, ...u }) => u) });
+    if (url.pathname === "/api/users" && req.method === "POST") {
+      const origin = req.headers.origin; if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error: "bad origin" });
+      const b = await body(req), username = tidy(b.username).toLowerCase(), name = clean(b.name, 60).trim(), pw = String(b.password || "");
+      if (!/^[a-z0-9._-]{3,30}$/.test(username) || username === "admin") return send(res, 400, { error: "Username: 3 to 30 letters, numbers, dots or dashes." });
+      if (!name) return send(res, 400, { error: "Give the person's name." });
+      if (pw.length < 10) return send(res, 400, { error: "Password must be at least 10 characters." });
+      try { await store.addUser({ username, name, hash: hashPw(pw) }); } catch (e) { if (e.code === "23505") return send(res, 409, { error: "That username is taken." }); throw e; }
+      bustUsers();
+      return send(res, 201, { ok: true });
+    }
+    if (url.pathname.startsWith("/api/users/") && req.method === "PUT") {
+      const origin = req.headers.origin; if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, { error: "bad origin" });
+      const id = +url.pathname.slice(11), b = await body(req), f = {};
+      if (!(id > 0)) return send(res, 400, { error: "bad id" });
+      if (b.password != null) { if (String(b.password).length < 10) return send(res, 400, { error: "Password must be at least 10 characters." }); f.hash = hashPw(b.password); }
+      if (typeof b.active === "boolean") f.active = b.active;
+      await store.setUser(id, f); bustUsers();
       return send(res, 200, { ok: true });
     }
     if (url.pathname === "/api/estimates" && req.method === "GET") return send(res, 200, { estimates: await store.listEst(clean(url.searchParams.get("q"), 60).trim()) });
