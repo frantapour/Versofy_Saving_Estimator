@@ -44,7 +44,7 @@ input[type=range]{width:100%;accent-color:light-dark(#193f2e,#fdbd14);height:32p
 .tinfo{margin-top:8px;font-size:14px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .tinfo b{display:block;font-size:15px}
 .warn{color:var(--sundk);font-weight:600}
-details{margin-top:4px}summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
+details{margin-top:4px}.nh{margin-top:8px;border:1px dashed var(--line);border-radius:10px;padding:0 12px 10px}.nhg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px 12px}.nhg .field{margin:0}.nhg select,.nhg input{width:100%}summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center}
 .res{display:grid;gap:18px}
 .rec{background:var(--green);color:#fff;border:1px solid var(--line);border-radius:12px;padding:clamp(18px,2.6vw,28px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 20px;align-items:end}
 .rec .k{font-weight:700;font-size:17px;grid-column:1/-1;color:var(--mint)}
@@ -140,7 +140,23 @@ a{color:inherit}
   <div class="field"><label class="lab" for="bill">Monthly electricity spend</label>
    <div class="money"><span>R</span><input type="text" id="bill" min="200" max="30000" step="50" value="4500" inputmode="numeric"></div>
    <div class="chips" id="chips" aria-label="Common bill amounts"><button type="button" data-b="1500">R1 500</button><button type="button" data-b="2500">R2 500</button><button type="button" data-b="3500">R3 500</button><button type="button" data-b="4500">R4 500</button><button type="button" data-b="6000">R6 000</button><button type="button" data-b="8000">R8 000</button></div>
-   <div class="hint">Average month incl. VAT: electricity bill or prepaid tokens bought.</div></div>
+   <div class="hint">Average month incl. VAT: electricity bill or prepaid tokens bought.</div>
+   <details class="nh" id="nh"><summary>New home, or not sure of the spend? Estimate it from the home</summary>
+    <div class="nhg">
+     <label class="field"><span class="lab">Home size</span><select id="nh_sz"><option value="250">1 to 2 bedrooms</option><option value="400" selected>3 bedrooms</option><option value="550">4 bedrooms</option><option value="700">5 or more bedrooms</option></select></label>
+     <label class="field"><span class="lab">People living there</span><input type="number" id="nh_pp" min="1" max="12" value="4"></label>
+     <label class="field"><span class="lab">Hot water</span><select id="nh_hw"><option value="85" selected>Electric geyser</option><option value="30">Heat pump</option><option value="25">Solar geyser (electric backup)</option><option value="0">Gas</option></select></label>
+     <label class="field"><span class="lab">Number of geysers</span><input type="number" id="nh_gy" min="0" max="6" value="1"></label>
+     <label class="field"><span class="lab">Stove and oven</span><select id="nh_ck"><option value="120" selected>Electric</option><option value="60">Gas hob, electric oven</option><option value="15">All gas</option></select></label>
+     <label class="field"><span class="lab">Pool pump</span><select id="nh_pl"><option value="0" selected>No pool</option><option value="150">Yes</option></select></label>
+     <label class="field"><span class="lab">Air conditioners</span><input type="number" id="nh_ac" min="0" max="10" value="0"></label>
+     <label class="field"><span class="lab">Underfloor or electric heating</span><select id="nh_ht"><option value="0" selected>None</option><option value="120">A few rooms</option><option value="250">Most of the home</option></select></label>
+     <label class="field"><span class="lab">Electric car charged at home</span><select id="nh_ev"><option value="0" selected>No</option><option value="220">One car</option><option value="440">Two cars</option></select></label>
+    </div>
+    <p class="sp" id="nh_out" aria-live="polite"></p>
+    <button type="button" class="abtn pri sm" id="nh_use">Use this estimate</button>
+    <p class="sp">A rough guide only: a new home's real use can be very different. Typical South African figures, averaged over the year.</p>
+   </details></div>
   <div class="field"><label class="lab" for="loc">Suburb or town</label>
    <input type="text" id="loc" value="Randburg" placeholder="e.g. Centurion, Durbanville, Umhlanga" aria-autocomplete="list" aria-controls="sugg">
    <div class="sugg" id="sugg" hidden role="listbox"></div></div>
@@ -459,7 +475,7 @@ function calc0(){
  $("figs").innerHTML=[[kw1(pk.mid)+" kW","estimated peak use ("+kw1(pk.lo)+"–"+kw1(pk.hi)+" kW); "+p.inv+" kW inverter "+(p.inv>=pk.hi?"covers it":p.inv>=pk.mid?"covers most peaks":"is below it"),p.inv>=pk.mid?"":"bk"],[K(m.used)+" kWh","solar used a month, "+Math.round(m.used/Math.max(kwh,1)*100)+"% of use",""],[R(sav),"off the grid bill a month",""],[RS(cur.n10),"net over 10 years, tariffs +"+$("esc").value+"%, fee +"+p.esc+"% a year",CM(cur.n10)],[RS(cur.n20),"net over 20 years; no fee after year 10",CL(cur.n20)]].map(([b,s,c])=>`<div class="fig2"><b class="${c}">${b}</b><span>${s}</span></div>`).join("");
  const mx=Math.max(...yr.map(Math.abs),1),hasNeg=yr.some(x=>x<0),up=hasNeg?Math.max(...yr,0)/(Math.max(...yr,0)-Math.min(...yr,0)||1):1,z=(up*100).toFixed(2),span=Math.max(...yr,0)-Math.min(...yr,0)||1;
  $("yrs").innerHTML=`<h3>Net saving each year with ${p.n}</h3><p>Grid saving minus the subscription. Hover a bar for the year's figure.</p><div class="ybars" role="img" aria-label="Yearly net saving over 20 years for ${p.n}">${yr.map((x,i)=>`<div class="ycol${i===10?" own":""}" title="Year ${i+1}: ${RS(x)}${i>=10?" (no subscription)":""}">${x>=0?`<i class="up" style="bottom:${(100-z)}%;height:${(x/span*100).toFixed(2)}%"></i>`:`<i class="dn" style="top:${z}%;height:${(-x/span*100).toFixed(2)}%"></i>`}</div>`).join("")}<div class="yzero" style="top:${z}%"></div></div><div class="ylab">${yr.map((_,i)=>`<span>${[0,4,9,14,19].includes(i)?i+1:""}</span>`).join("")}</div><div class="ykey"><span>Years 1–10: subscription</span><span>Years 11–20: system is the customer's</span></div>`;
- const pts=[`“These figures are estimates, based on the bill you gave us and your area's tariff. Your actual saving depends on how and when you use power and on the weather. A site assessment confirms the final figures.”`,neg?`“We estimate your grid bill drops from ${R(bill)} to ${R(m.after)} a month. The solar pays for ${R(sav)} of the ${R(p.fee)} subscription.”`:`“We estimate you save about ${R(net)} a month from the first month, after the ${R(p.fee)} subscription.”`,
+ const pts=[...(st.estBill?[`<b>New home:</b> “Because this is a new home, we estimated your electricity use from its size and appliances. Your real use could be quite different, and so could your saving.”`]:[]),`“These figures are estimates, based on ${st.estBill?"the use we estimated for your new home":"the bill you gave us"} and your area's tariff. Your actual saving depends on how and when you use power and on the weather. A site assessment confirms the final figures.”`,neg?`“We estimate your grid bill drops from ${R(bill)} to ${R(m.after)} a month. The solar pays for ${R(sav)} of the ${R(p.fee)} subscription.”`:`“We estimate you save about ${R(net)} a month from the first month, after the ${R(p.fee)} subscription.”`,
   neg?`“The roughly ${R(-net)} a month on top is what you pay for backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${hTxt} when the power goes off.”`:`“You also get backup power: a ${p.bat} kWh battery that keeps lights, Wi-Fi, TV and the fridge on for ${hTxt} when the power goes off.”`,
   cross>0&&cross<10?`“If electricity tariffs keep rising about ${$("esc").value}% a year, and the subscription rises ${p.esc}% a year, your saving should be bigger than the fee from about year ${cross+1}.”`:`“If electricity tariffs keep rising about ${$("esc").value}% a year, faster than the subscription's ${p.esc}%, your saving should grow over time.”`,
   cur.n10>=0?`“Over 10 years we estimate you come out about ${R(cur.n10)} ahead.”`:`“Over 10 years, we estimate backup power costs you about ${R(-cur.n10)} in total, about ${R(-cur.n10/120)} a month on average.”`,
@@ -510,7 +526,7 @@ function buildPdf(){
  txt('You confirmed to '+$("sname").value.trim()+' that you understand this is an estimate. Please read the disclaimer (ref '+ref+').',W/2,y+5.8,{s:8,b:1,a:"center"});y+=9;
  // monthly table
  y+=6;txt("Your monthly bill (estimated)",M,y,{s:12,b:1});y+=3;
- const rowsM=[["Electricity today, as you told us",PDFR(L.bill)],["Estimated grid bill with Versofy",PDFR(m.after)],["Versofy "+p.n+" subscription, incl. VAT"+(p.afee?" + "+PDFR(p.afee)+" add-ons (to be verified)":""),PDFR(p.fee)],["Estimated total with Versofy",PDFR(m.after+p.fee)],[L.neg?"Estimated price of battery backup":"Estimated net saving each month",L.neg?PDFR(-L.net):PDFR(L.net)]];
+ const rowsM=[[st.estBill?"Estimated spend (new home, from its details)":"Electricity today, as you told us",PDFR(L.bill)],["Estimated grid bill with Versofy",PDFR(m.after)],["Versofy "+p.n+" subscription, incl. VAT"+(p.afee?" + "+PDFR(p.afee)+" add-ons (to be verified)":""),PDFR(p.fee)],["Estimated total with Versofy",PDFR(m.after+p.fee)],[L.neg?"Estimated price of battery backup":"Estimated net saving each month",L.neg?PDFR(-L.net):PDFR(L.net)]];
  rowsM.forEach((r,i)=>{y+=6.3;doc.setDrawColor(220,207,191);doc.line(M,y+2.2,W-M,y+2.2);const b=i>=3;txt(r[0],M,y,{s:10,b});txt(r[1],W-M,y,{s:10,b,a:"right",c:i===4?(L.neg?[154,90,0]:Gd):N})});
  // long term
 y+=11;txt("Over the years (illustration, not a forecast)",M,y,{s:12,b:1});
@@ -520,7 +536,7 @@ y+=11;txt("Over the years (illustration, not a forecast)",M,y,{s:12,b:1});
  if(L.cross>0&&L.cross<10){txt(`On these assumptions, from year ${L.cross+1} the yearly saving is bigger than the subscription.`,M,y,{s:8.5});y+=6}
  // assumptions
  txt("How we worked it out",M,y,{s:10,b:1});
- const as=[`Based only on what you told us: average spend ${PDFR(L.bill)} a month, ${L.pl?L.pl.n:"your area"}, ${L.who==="esk"?"buying from Eskom":"buying from the municipality"}, ${L.meter==="con"?"monthly account":"prepaid meter"}, ${L.ph===3?"three-phase":"single-phase"} supply. Please check these: if any is wrong, this estimate will be wrong. Tariff used: ${L.t.n}${L.pl?" ("+L.pl.n+(L.pl.mun&&!L.pl.n.startsWith(L.pl.mun)?", "+L.pl.mun:"")+", "+(L.meter==="con"?"monthly account":"prepaid")+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
+ const as=[`Based only on what you told us: ${st.estBill?`estimated spend ${PDFR(L.bill)} a month (new home: worked out from its size and appliances, not from a bill, so real use may differ a lot)`:`average spend ${PDFR(L.bill)} a month`}, ${L.pl?L.pl.n:"your area"}, ${L.who==="esk"?"buying from Eskom":"buying from the municipality"}, ${L.meter==="con"?"monthly account":"prepaid meter"}, ${L.ph===3?"three-phase":"single-phase"} supply. Please check these: if any is wrong, this estimate will be wrong. Tariff used: ${L.t.n}${L.pl?" ("+L.pl.n+(L.pl.mun&&!L.pl.n.startsWith(L.pl.mun)?", "+L.pl.mun:"")+", "+(L.meter==="con"?"monthly account":"prepaid")+")":""}. About ${K(L.kwh)} kWh a month at ${PDFR(L.bill)}.`,
   (()=>{const ms=m.months,u=ms.map(x=>x.use),g=ms.map(x=>x.prod),lo=g.indexOf(Math.min(...g)),hi=g.indexOf(Math.max(...g));return `Use: about ${K(L.kwh)} kWh a month (${K(Math.min(...u))} to ${K(Math.max(...u))}, higher in winter). Solar: ${p.kwp} kWp makes about ${K(m.prod)} kWh a month (${K(g[lo])} in ${ms[lo].m} to ${K(g[hi])} in ${ms[hi].m}), from ${L.y.toFixed(1)} kWh per kWp a day for an ideal north-facing roof, adjusted for season, ${(ROOFS[L.roof]||ROOFS.mix)[2]} and ${(SHADES[L.shade]||SHADES.lite)[3]}. ${Math.round(L.d*100)}% of use in daylight; ${Math.round(L.dod*100)}% of the battery used each night. About ${K(L.used)} kWh of solar used a month; no credit for surplus.`})(),
   `Electricity tariffs rise ${L.esc}% a year; the subscription rises ${L.se}% a year. The contract ends after year 10, when the system can be bought for ${PDFR(GEN.buy)}. Panel output falls ${GEN.pdeg}% and battery capacity ${GEN.bdeg}% a year. The inverter will be out of warranty after year 10 but is assumed to keep working.`,
   `Estimated peak use about ${kw1(L.pk.mid)} kW (${kw1(L.pk.lo)}-${kw1(L.pk.hi)} kW); the ${p.inv} kW inverter ${p.inv>=L.pk.hi?"covers it":p.inv>=L.pk.mid?"covers most peaks":"is below it, so run fewer large appliances at once during outages"}. Backup time assumes about 500 W of essentials. Upkeep and battery replacement after year 10 are not included, and amounts are not adjusted for inflation.`];
@@ -718,10 +734,17 @@ $("rec").addEventListener("change",e=>{if(e.target.id==="pksel"){st.sel=e.target
 $("tbl").addEventListener("click",e=>{const tr=e.target.closest("tr[data-n]");if(tr){st.sel=tr.dataset.n;calc();$("rec").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"})}});
 $("tbl").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-n]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();st.sel=tr.dataset.n;calc()}});
 $("f").addEventListener("input",e=>{if(!["loc","ovr"].includes(e.target.id))calc()});
-$("bill").addEventListener("input",()=>{st.sel=null;clearAdds();syncChips()});
+$("bill").addEventListener("input",()=>{st.sel=null;st.estBill=false;clearAdds();syncChips()});
+function nhKwh(){const v=id=>Math.max(0,+$(id).value||0),pp=Math.min(12,Math.max(1,v("nh_pp")));return Math.round(v("nh_sz")+45*pp+v("nh_hw")*pp+(+$("nh_hw").value>0?Math.min(6,v("nh_gy"))*(+$("nh_hw").value>=85?60:20):0)+v("nh_ck")+v("nh_pl")+90*Math.min(10,v("nh_ac"))+v("nh_ht")+v("nh_ev"))}
+function nhBill(k){let b=2500;for(let i=0;i<3;i++){const t=T[pickTariff(b)];b=Math.round(cost(t,k)/50)*50}return b}
+function nhShow(){const k=nhKwh(),b=nhBill(k);$("nh_out").textContent=`About ${K(k)} kWh a month, so roughly ${R(b)} a month at this area's tariff.`;return b}
+["nh_sz","nh_pp","nh_hw","nh_gy","nh_ck","nh_pl","nh_ac","nh_ht","nh_ev"].forEach(id=>{$(id).addEventListener("input",e=>{e.stopPropagation();nhShow()});$(id).addEventListener("change",e=>{e.stopPropagation();nhShow()})});
+$("nh").addEventListener("toggle",()=>{if($("nh").open)nhShow()});
+$("nh_use").addEventListener("click",()=>{const b=nhShow();$("bill").value=b;st.sel=null;clearAdds();syncChips();st.estBill=true;calc()});
+
 $("day").addEventListener("input",clearAdds);
 const syncChips=()=>{for(const c of $("chips").children)c.setAttribute("aria-pressed",+c.dataset.b===billVal())};
-$("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c)return;$("bill").value=c.dataset.b;st.sel=null;clearAdds();syncChips();calc()});
+$("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c)return;$("bill").value=c.dataset.b;st.sel=null;st.estBill=false;clearAdds();syncChips();calc()});
 syncChips();
 $("f").addEventListener("submit",e=>e.preventDefault());
 document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
