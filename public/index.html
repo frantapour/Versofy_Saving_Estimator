@@ -405,8 +405,9 @@ function model(p,t,kwh,d,y,dod){
  const after=Math.max(Math.min(t.fix,cost(t,kwh)),cost(t,kwh)-(cu-cg));
  return {prod,direct,stored,used,grid,after,waste,months};
 }
+function clearAdds(){st.add={};renderAdds()}
 function setPlace(pl,keepWho){
- st.place=pl;$("loc").value=pl?pl.n:$("loc").value;
+ if(st.place!==pl)clearAdds();st.place=pl;$("loc").value=pl?pl.n:$("loc").value;
  if(!keepWho)st.who="muni";
  if(pl)$("yield").value=Y[pl.p];
  $("sugg").hidden=true;calc();
@@ -706,20 +707,21 @@ $("loc").addEventListener("input",suggest);
 $("loc").addEventListener("change",()=>{const v=$("loc").value.trim();if(!v){$("loc").value=st.place?st.place.n:"";return}if(st.place&&norm(st.place.n)===norm(v))return;const q=norm(v);const ex=PL.find(p=>norm(p.n)===q);const h=ex||PL.filter(p=>norm(p.n).includes(q)).sort((a,b)=>norm(a.n).indexOf(q)-norm(b.n).indexOf(q))[0];if(h)setPlace(h);else setPlace({n:v,m:"oth",p:"GP",e:false})});
 $("loc").addEventListener("focus",e=>e.target.select());
 $("loc").addEventListener("keydown",e=>{const bs=[...$("sugg").children];if($("sugg").hidden||!bs.length)return;if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();hi=(hi+(e.key==="ArrowDown"?1:bs.length-1))%bs.length;bs.forEach((b,i)=>b.className=i===hi?"on":"")}if(e.key==="Enter"){e.preventDefault();bs[hi].click()}if(e.key==="Escape")$("sugg").hidden=true});
-$("meter").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.meter=b.dataset.m;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
-$("who").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.who=b.dataset.w;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
+$("meter").addEventListener("click",e=>{const b=e.target.closest("button");if(b){if(st.meter!==b.dataset.m)clearAdds();st.meter=b.dataset.m;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
+$("who").addEventListener("click",e=>{const b=e.target.closest("button");if(b){if(st.who!==b.dataset.w)clearAdds();st.who=b.dataset.w;if(st.ovr){st.ovr="";$("ovr").value=""}calc()}});
 $("roof").innerHTML=Object.entries(ROOFS).map(([k,v])=>`<option value="${k}">${v[1]}</option>`).join("");$("shade").innerHTML=Object.entries(SHADES).map(([k,v])=>`<option value="${k}">${v[2]}</option>`).join("");
 $("roof").addEventListener("change",e=>{st.roof=e.target.value;calc()});$("shade").addEventListener("change",e=>{st.shade=e.target.value;calc()});
-$("ph").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.ph=+b.dataset.p;st.sel=null;renderAdds();calc()}});
-$("ovr").addEventListener("change",e=>{st.ovr=e.target.value;calc()});
+$("ph").addEventListener("click",e=>{const b=e.target.closest("button");if(b){st.ph=+b.dataset.p;st.sel=null;clearAdds();calc()}});
+$("ovr").addEventListener("change",e=>{st.ovr=e.target.value;clearAdds();calc()});
 $("rec").addEventListener("click",e=>{if(e.target.id==="back"){st.sel=null;calc()}const ib=e.target.closest("[data-pk]");if(ib){st.sel=ib.dataset.pk;calc();return}const ap=e.target.closest("[data-apply]");if(ap){const Q=JSON.parse(ap.dataset.apply);for(const a of ADD)st.add[a.id]=Q[a.id]||0;if(!st.sel)st.sel=LAST&&LAST.p?LAST.p.n:null;renderAdds();calc()}});
 $("rec").addEventListener("change",e=>{if(e.target.id==="pksel"){st.sel=e.target.value;calc();const s=$("pksel");if(s)s.focus()}});
 $("tbl").addEventListener("click",e=>{const tr=e.target.closest("tr[data-n]");if(tr){st.sel=tr.dataset.n;calc();$("rec").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth",block:"nearest"})}});
 $("tbl").addEventListener("keydown",e=>{const tr=e.target.closest("tr[data-n]");if(tr&&(e.key==="Enter"||e.key===" ")){e.preventDefault();st.sel=tr.dataset.n;calc()}});
 $("f").addEventListener("input",e=>{if(!["loc","ovr"].includes(e.target.id))calc()});
-$("bill").addEventListener("input",()=>{st.sel=null;syncChips()});
+$("bill").addEventListener("input",()=>{st.sel=null;clearAdds();syncChips()});
+$("day").addEventListener("input",clearAdds);
 const syncChips=()=>{for(const c of $("chips").children)c.setAttribute("aria-pressed",+c.dataset.b===billVal())};
-$("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c)return;$("bill").value=c.dataset.b;st.sel=null;syncChips();calc()});
+$("chips").addEventListener("click",e=>{const c=e.target.closest("button");if(!c)return;$("bill").value=c.dataset.b;st.sel=null;clearAdds();syncChips();calc()});
 syncChips();
 $("f").addEventListener("submit",e=>e.preventDefault());
 document.addEventListener("click",e=>{if(!e.target.closest("#sugg")&&e.target.id!=="loc")$("sugg").hidden=true});
