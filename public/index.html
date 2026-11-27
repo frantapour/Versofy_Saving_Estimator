@@ -192,7 +192,7 @@ a{color:inherit}
   <button type="button" id="reset" style="margin-top:6px;min-height:44px;padding:0 16px;font:700 15px 'Open Sans';border:0;border-radius:9999px;background:var(--yel);color:var(--navy);cursor:pointer">New quote</button>
  </form>
  <div class="res" aria-live="polite">
-  <div class="recwrap"><div class="rec" id="rec"></div><div class="recadd" id="addf" hidden><div class="lab">Add-ons for this quote</div><div class="must" role="note" style="margin:6px 0 10px;font-size:14px"><b>⚠ Verify add-on and upgrade prices first.</b> These prices are provisional. Before you quote one, confirm the price with the Versofy technical team and check that the roof, inverter and battery limits suit this home.</div><div class="adds" id="adds"></div><div class="hint">They change the package's price and specs above, and are added to every package in the table below.</div></div></div>
+  <div class="recwrap"><div class="rec" id="rec"></div><div class="recadd" id="addf" hidden><div class="lab">Add-ons for this quote</div><div class="must" role="note" style="margin:6px 0 10px;font-size:14px"><b>⚠ Verify add-on and upgrade prices first.</b> These prices are provisional. Before you quote one, confirm the price with the Versofy technical team and check that the roof, inverter and battery limits suit this home.</div><div class="adds" id="adds"></div><div class="hint">Tech team guideline: add 4 extra panels with each extra battery. They are filled in for you, up to the inverter's panel limit. They change the package's price and specs above, and are added to every package in the table below.</div></div></div>
   <div><div class="verdict" id="net"></div><div class="vsub" id="netsub"></div></div>
   <div>
    <div class="bills">
@@ -315,6 +315,9 @@ const addTxt=(a,q)=>a.type==="bat"?`${q} × ${a.n} (${+(a.val*q).toFixed(2)} kWh
 const PVMAX={5:6.5,8:10,12:13,16:18};
 // largest panel (W) allowed on each inverter size
 const PWMAX={5:460,8:600,12:600,16:600};
+// tech team guideline: each extra battery is matched with 4 extra panels, as far as the inverter's panel limit allows
+const PAIR=4;
+function pairPanels(b,nb){const pa=ADD.find(a=>a.type==="pan"&&a.on&&a.fee>0);if(!pa||!b||!(b.pan>0)||!nb)return 0;const per=b.kwp/b.pan;if(PWMAX[b.inv]&&per*1000>PWMAX[b.inv]+0.5)return 0;const cap=PVMAX[b.inv]?Math.max(0,Math.floor((PVMAX[b.inv]-b.kwp+1e-6)/(pa.val*per))):pa.max;return Math.min(pa.max,cap,Math.ceil(PAIR*nb/pa.val))}
 function withAdd(p,Q){Q=Q||st.add;const iu0=invUp(p,+Q.invTo||0),invF=iu0?iu0.to:p.inv;let kwp=p.kwp,pan=p.pan,bat=p.bat,inv=p.inv,afee=0;const adds=[];const per=p.pan?p.kwp/p.pan:0.46;
  for(const a of ADD){if(!a.on||!(a.fee>0))continue;const q=Math.min(a.max,Math.max(0,Math.round(Q[a.id]||0)));if(!q)continue;
   if(a.type==="bat"){bat+=a.val*q;afee+=a.fee*q;adds.push(addTxt(a,q))}
@@ -453,7 +456,7 @@ function calc0(){
  const cur=rows.find(r=>r.p.n===st.sel)||rec,{p,m,net}=cur,isRec=cur===rec;
  let ups="";{const base=PK.find(x=>x.n===p.n),la=ADD.filter(a=>a.on&&a.fee>0);
   if(base&&la.length){const opts=[];const rng=a=>Array.from({length:Math.min(a.max,8)+1},(_,i)=>i);
-   const rec2=(i,Q)=>{if(i===la.length){const q=withAdd(base,{...Q,invTo:st.add.invTo||0}),mm=model(q,t,kwh,d,y,dod);opts.push({Q:{...Q},q,net:bill-mm.after-q.fee});return}for(const n of rng(la[i]))rec2(i+1,{...Q,[la[i].id]:n})};rec2(0,{});
+   const rec2=(i,Q)=>{if(i===la.length){const nb=la.filter(a=>a.type==="bat").reduce((x,a)=>x+(Q[a.id]||0),0),np=la.filter(a=>a.type==="pan").reduce((x,a)=>x+(Q[a.id]||0)*a.val,0);if(np<pairPanels(base,nb))return;const q=withAdd(base,{...Q,invTo:st.add.invTo||0}),mm=model(q,t,kwh,d,y,dod);opts.push({Q:{...Q},q,net:bill-mm.after-q.fee});return}for(const n of rng(la[i]))rec2(i+1,{...Q,[la[i].id]:n})};rec2(0,{});
    const same=o=>la.every(a=>(o.Q[a.id]||0)===(Math.round(st.add[a.id]||0)));
    const pos=opts.filter(o=>o.net>=0).sort((a,b)=>a.q.afee-b.q.afee||b.net-a.net)[0],top=opts.reduce((a,b)=>b.net>a.net?b:a);
    const pickO=net<0&&pos?pos:top;
@@ -594,7 +597,9 @@ loadMT(DEF_MT);
 function renderAdds(){const live=ADD.filter(a=>a.on&&a.fee>0),tos=[];$("addf").hidden=!live.length&&!tos.length;
  for(const k in st.add)if(k!=="invTo"&&!live.some(a=>a.id===k))delete st.add[k];if(!tos.includes(+st.add.invTo))delete st.add.invTo;
  $("adds").innerHTML=live.map(a=>`<label class="addr"><span><b>${a.n}</b>${a.type==="bat"?a.val+" kWh each":a.val+" panel"+(a.val>1?"s":"")+" each, same size as the package's panels, up to the inverter's limit"} · ${R(a.fee)}/month each incl. VAT</span><input type="number" min="0" max="${a.max}" step="1" value="${st.add[a.id]||0}" data-add="${a.id}" aria-label="How many: ${a.n}"></label>`).join("")+(tos.length?`<label class="addr"><span><b>Bigger inverter</b>Upgrades packages with a smaller inverter; price depends on the package's inverter</span><select data-add="invTo" aria-label="Bigger inverter"><option value="0">None</option>${tos.map(t=>`<option value="${t}" ${+st.add.invTo===t?"selected":""}>${t} kW</option>`).join("")}</select></label>`:"")}
-$("adds").addEventListener("input",e=>{const i=e.target.closest("[data-add]");if(!i)return;st.add[i.dataset.add]=Math.max(0,+i.value||0);calc()});
+$("adds").addEventListener("input",e=>{const i=e.target.closest("[data-add]");if(!i)return;const id=i.dataset.add,v=Math.max(0,+i.value||0),a=ADD.find(x=>x.id===id);st.add[id]=v;
+ if(a&&a.type==="bat"){const pa=ADD.find(x=>x.type==="pan"&&x.on&&x.fee>0),b=PK.find(x=>x.n===(st.sel||(LAST&&LAST.p&&LAST.p.n)));if(pa){const nb=ADD.filter(x=>x.type==="bat").reduce((t,x)=>t+(st.add[x.id]||0),0),need=pairPanels(b,nb);if((st.add[pa.id]||0)<need){st.add[pa.id]=need;const pi=$("adds").querySelector(`[data-add="${pa.id}"]`);if(pi)pi.value=need}}}
+ calc()});
 renderAdds();
 function setStatus(kind,txt){const e=$("cfgst");e.className="cfgst"+(kind==="warn"?" warn":"");e.textContent=txt}
 async function whoName(id){if(!USER||!id)return "an admin";try{const ps=await USER.profiles([id]);return ps[id].name||"an admin"}catch(e){return "an admin"}}
