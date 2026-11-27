@@ -117,7 +117,7 @@ function validConfig(c) {
   if (!Array.isArray(c.products) || !c.products.length || c.products.length > 40) return false;
   if (c.addons && (!Array.isArray(c.addons) || c.addons.length > 30)) return false;
   if (!c.tariffs || typeof c.tariffs !== "object") return false;
-  return c.products.every(p => p && typeof p.n === "string" && +p.fee > 0 && +p.kwp > 0);
+  return c.products.every(p => p && typeof p.n === "string" && +p.fee > 0 && +p.kwp >= 0);
 }
 
 const LOGIN_PAGE = (msg, personal) => `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Versofy savings calculator</title>
